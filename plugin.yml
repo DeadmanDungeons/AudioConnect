@@ -1,0 +1,11 @@
+name: AudioConnect
+main: com.deadmandungeons.audioconnect.AudioConnect
+version: 1.0.0
+author: Weasel_Squeezer
+website: http://www.deadmandungeons.com
+
+depend: [DeadmanPlugin, WorldGuard, WorldEdit]
+
+commands:
+    ac:
+        description: AudioConnect command prefix. Use "/ac help" to see all the AudioConnect commands you can use.

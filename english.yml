@@ -1,0 +1,18 @@
+# Recognized formatting codes: http://www.minecraftwiki.net/wiki/Formatting_codes
+# Example: &cThis text will be red and this link will be underlined &nhttp://deadmandungeons.org
+
+# Variables will only be recognized in the current messages they are in
+
+primary-color: '&c'
+secondary-color: '&6'
+tertiary-color: '&7'
+
+failed:
+  invalid-args: '&cInvalid arguments. Type "/ac help" for a list of commands'
+  invalid-args-alt: '&cInvalid arguments. The proper command usage is:'
+  no-permission: '&cYou do not have the permission to perform this command'
+
+succeeded:
+  reloaded: '&6AudioConnect config and language files have been reloaded!'
+
+misc: {}

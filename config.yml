@@ -1,0 +1,20 @@
+# ----------------------- AudioConnect ----------------------- #
+#                                                              #
+#      Author: Weasel_Squeezer                                 #
+#      Website: deadmandungeons.com                            #
+#                                                              #
+# ------------------------------------------------------------ #
+
+# Configure settings for reconnecting to the AudioConnect server in the event of an unexpected disconnect.
+# If the reason for the disconnect was because the server refused the conneciton, or if the client was manually
+# disconnected, the client will not attempt to reconnect.
+reconnect:
+  # The number of miliseconds to delay before attempting to reconnect
+  interval: 3000
+  # The maximum number of milliseconds to delay a reconnection attempt
+  max-interval: 30000
+  # The rate of increase of the reconnect delay. Allows reconnect attempts to back off when problems persist
+  delay: 1.5
+  # The maximum number of reconnection attempts that will be made before giving up. 
+  # If -1, reconnection attempts will continue to be made forever.
+  max-attempts: -1
