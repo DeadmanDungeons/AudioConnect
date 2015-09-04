@@ -113,12 +113,7 @@ public class AudioConnectClientHandler extends SimpleChannelInboundHandler<Objec
 									offlinePlayers.add(playerId);
 								}
 								String json = messenger.serialize(new StatusMessage(playerId, status));
-								System.out.println("response: " + json);
-								try {
-									System.out.println("Success: " + ctx.writeAndFlush(new TextWebSocketFrame(json)).sync().isSuccess());
-								} catch (InterruptedException e) {
-									e.printStackTrace();
-								}
+								ctx.writeAndFlush(new TextWebSocketFrame(json));
 							}
 						});
 					} else if (commandMessage.getData() == Command.REMOVE) {
