@@ -11,8 +11,10 @@ failed:
   invalid-args: '&cInvalid arguments. Type "/ac help" for a list of commands'
   invalid-args-alt: '&cInvalid arguments. The proper command usage is:'
   no-permission: '&cYou do not have the permission to perform this command'
+  player-not-connected: "&cA player named '<player-name>' is not connected to AudioConnect"
 
 succeeded:
-  reloaded: '&6AudioConnect config and language files have been reloaded!'
+  reloaded: 'AudioConnect config and language files have been reloaded!'
+  audio-msg-sent: 'Audio ID <audio-id> has been sent to be played to <player-name>'
 
 misc: {}

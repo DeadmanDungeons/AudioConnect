@@ -1,6 +1,5 @@
 package com.deadmandungeons.audioconnect.client;
 
-
 import java.net.URI;
 import java.util.Set;
 import java.util.UUID;
@@ -64,7 +63,7 @@ public class AudioConnectClientHandler extends SimpleChannelInboundHandler<Objec
 				plugin.getLogger().info("Successfully connected to AudioConnect server!");
 			} catch (Exception e) {
 				String responseMsg = response.content().toString(CharsetUtil.UTF_8);
-				plugin.getLogger().severe("Connection with AudioConnect server refused: " + responseMsg);
+				plugin.getLogger().severe("Failed to Connect with AudioConnect server: " + responseMsg);
 				ctx.channel().attr(CONNECTION_REFUSED).set(true);
 				ctx.close();
 			}

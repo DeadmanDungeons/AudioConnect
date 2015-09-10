@@ -2,13 +2,19 @@ package com.deadmandungeons.audioconnect.client;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
+import org.deadmandungeons.deadmanplugin.PlayerID;
 
 import com.deadmandungeons.audioconnect.AudioConnect;
 import com.deadmandungeons.audioconnect.Config;
 import com.deadmandungeons.audioconnect.Config.ConfigNum;
-import com.deadmandungeons.audioconnect.messages.AudioRegionMessage;
+import com.deadmandungeons.audioconnect.messages.AudioMessage;
 import com.deadmandungeons.connect.messenger.Messenger;
 import com.deadmandungeons.connect.messenger.Messenger.Message;
 import com.deadmandungeons.connect.messenger.StatusMessage;
@@ -59,7 +65,7 @@ public class AudioConnectClient {
 	private int reconnectAttempts;
 	
 	private AudioConnectClient() {
-		messenger = Messenger.builder().registerMessageType(AudioRegionMessage.class, AudioRegionMessage.CREATOR).build();
+		messenger = Messenger.builder().registerMessageType(AudioMessage.class, AudioMessage.CREATOR).build();
 	}
 	
 	
@@ -69,6 +75,20 @@ public class AudioConnectClient {
 	
 	public boolean isPlayerTracked(UUID playerId) {
 		return connection != null && connection.handler.getTrackedPlayers().contains(playerId);
+	}
+	
+	public Set<PlayerID> getTrackedPlayers() {
+		Set<PlayerID> trackedPlayers = new HashSet<>();
+		if (connection != null) {
+			for (UUID id : connection.handler.getTrackedPlayers()) {
+				Player player = Bukkit.getPlayer(id);
+				if (player == null) {
+					throw new IllegalStateException("Player by ID " + id + " is being tracked but is not online");
+				}
+				trackedPlayers.add(new PlayerID(id, player.getName()));
+			}
+		}
+		return trackedPlayers;
 	}
 	
 	public void notifyPlayerJoin(UUID playerId) {

@@ -9,3 +9,28 @@ depend: [DeadmanPlugin, WorldGuard, WorldEdit]
 commands:
     ac:
         description: AudioConnect command prefix. Use "/ac help" to see all the AudioConnect commands you can use.
+
+permissions:
+    audioconnect.*:
+        default: op
+        description: Gieves access to all AudioConnect permissions
+        children:
+            audioconnect.all: true
+    audioconnect.all:
+        default: op
+        description: Gives access to all AudioConnect permissions
+        children:
+            audioconnect.admin.all: true
+            audioconnect.user.all: true
+    audioconnect.admin.*:
+        default: op
+        description: Gives access to all AudioConnect admin permissions
+        children:
+            audioconnect.admin.all: true
+    audioconnect.admin.all:
+        default: op
+        description: Gives access to all AudioConnect setup permissions
+        children:
+            audioconnect.admin.reload: true
+            audioconnect.admin.list: true
+            audioconnect.admin.send: true

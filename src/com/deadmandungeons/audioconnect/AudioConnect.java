@@ -18,7 +18,7 @@ import org.deadmandungeons.deadmanplugin.filedata.PluginFile;
 
 import com.deadmandungeons.audioconnect.client.AudioConnectClient;
 import com.deadmandungeons.audioconnect.command.CommandHandler;
-import com.deadmandungeons.audioconnect.messages.AudioRegionMessage;
+import com.deadmandungeons.audioconnect.messages.AudioMessage;
 import com.google.common.collect.Sets;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.bukkit.util.Locations;
@@ -116,11 +116,12 @@ public class AudioConnect extends DeadmanPlugin implements Listener {
 					}
 					
 					if (trackingData.currentAudioRegion != previous) {
-						String regionName = null;
+						String audioId = null;
 						if (trackingData.currentAudioRegion != null) {
-							regionName = trackingData.currentAudioRegion.getId().substring(AUDIO_REGION_ID_PREFIX.length());
+							audioId = trackingData.currentAudioRegion.getId().substring(AUDIO_REGION_ID_PREFIX.length());
 						}
-						AudioRegionMessage message = new AudioRegionMessage(player.getUniqueId(), regionName);
+						
+						AudioMessage message = AudioMessage.create(player.getUniqueId(), audioId);
 						AudioConnectClient.getInstance().writeAndFlush(message);
 					}
 					
