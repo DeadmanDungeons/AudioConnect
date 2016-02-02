@@ -3,8 +3,9 @@ package com.deadmandungeons.audioconnect.command;
 import java.util.Set;
 
 import org.bukkit.ChatColor;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
-import org.deadmandungeons.deadmanplugin.PlayerID;
+import org.deadmandungeons.deadmanplugin.DeadmanUtils;
 import org.deadmandungeons.deadmanplugin.command.ArgumentInfo;
 import org.deadmandungeons.deadmanplugin.command.ArgumentInfo.ArgType;
 import org.deadmandungeons.deadmanplugin.command.Arguments;
@@ -13,8 +14,7 @@ import org.deadmandungeons.deadmanplugin.command.CommandInfo;
 import org.deadmandungeons.deadmanplugin.command.SubCommandInfo;
 
 import com.deadmandungeons.audioconnect.AudioConnect;
-import com.deadmandungeons.audioconnect.client.AudioConnectClient;
-
+import com.deadmandungeons.audioconnect.AudioConnectClient.TrackingInfo;
 
 //@formatter:off
 @CommandInfo(
@@ -38,10 +38,15 @@ public class ListCommand implements Command {
 	public boolean execute(CommandSender sender, Arguments args) {
 		Arguments.validateType(args, getClass());
 		
+		if (!plugin.getClient().isConnected()) {
+			plugin.getMessenger().sendErrorMessage(sender, "failed.not-connected-server");
+			return false;
+		}
+		
 		int pageNum = (args.getArgs().length == 1 ? (Integer) args.getArgs()[0] : 1);
 		
-		Set<PlayerID> trackedPlayers = AudioConnectClient.getInstance().getTrackedPlayers();
-		PlayerID[] list = trackedPlayers.toArray(new PlayerID[trackedPlayers.size()]);
+		Set<TrackingInfo> trackedPlayers = plugin.getClient().getTrackedPlayers();
+		TrackingInfo[] list = trackedPlayers.toArray(new TrackingInfo[trackedPlayers.size()]);
 		
 		int itemsPerPage = 10;
 		int maxPage = list.length / itemsPerPage + (list.length % itemsPerPage > 0 ? 1 : 0);
@@ -49,18 +54,43 @@ public class ListCommand implements Command {
 			pageNum = maxPage;
 		}
 		
-		ChatColor primaryColor = plugin.getMessenger().getPrimaryColor();
-		ChatColor tertiaryColor = plugin.getMessenger().getTertiaryColor();
+		ChatColor color1 = plugin.getMessenger().getPrimaryColor();
+		ChatColor color2 = plugin.getMessenger().getSecondaryColor();
+		ChatColor color3 = plugin.getMessenger().getTertiaryColor();
 		
-		String paging = (list.length > itemsPerPage ? " [pg. " + pageNum + "/" + maxPage + "]" : "");
-		String listTitle = primaryColor + "Connected Players" + paging + tertiaryColor;
-		sender.sendMessage(tertiaryColor + "<=============== " + listTitle + " ===============>");
+		String reset = ChatColor.RESET.toString();
+		String barLeft = color3 + "<" + ChatColor.STRIKETHROUGH;
+		String barRight = reset + color3 + ">";
+		
+		String paging = (list.length > itemsPerPage ? "[pg. " + pageNum + "/" + maxPage + "] " : "");
+		String barSpace = (paging.isEmpty() ? "----" : "");
+		String title = reset + color2 + " Connected Players " + paging + color3;
+		String topBar = "-------------" + barSpace + title + ChatColor.STRIKETHROUGH + barSpace + "-------------";
+		sender.sendMessage(barLeft + topBar + barRight);
+		
+		if (list.length > 0) {
+			sender.sendMessage(color2 + "  KEY: " + color1 + color1.name() + color2 + " = Online, " + ChatColor.RED + "RED" + color2 + " = Offline");
+			sender.sendMessage("");
+		} else {
+			sender.sendMessage(ChatColor.RED + "  * NONE *");
+		}
+		
 		for (int i = 0; i < list.length && i < (pageNum * itemsPerPage); i++) {
 			if (i >= (pageNum - 1) * itemsPerPage) {
-				sender.sendMessage("  " + list[i].toString());
+				long duration = System.currentTimeMillis() - list[i].getTimeConnected();
+				String connectedDuration = ChatColor.DARK_GRAY + " (" + DeadmanUtils.formatDuration(duration) + ")";
+				
+				OfflinePlayer connectedPlayer = list[i].getPlayer();
+				if (connectedPlayer.isOnline()) {
+					sender.sendMessage("  " + color1 + connectedPlayer.getName() + connectedDuration);
+				} else {
+					String name = connectedPlayer.getName();
+					sender.sendMessage("  " + ChatColor.RED + (name != null ? name : connectedPlayer.getUniqueId()) + connectedDuration);
+				}
 			}
 		}
-		sender.sendMessage(tertiaryColor + "<==================================================>");
+		
+		sender.sendMessage(barLeft + "---------------------------------------------------" + barRight);
 		return true;
 	}
 	

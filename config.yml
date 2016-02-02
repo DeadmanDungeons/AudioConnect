@@ -5,6 +5,21 @@
 #                                                              #
 # ------------------------------------------------------------ #
 
+connection:
+  # The user-id (UUID/Username) of the AudioConnect account to connect with
+  # (usually the player UUID/Username of the server owner)
+  user-id: ''
+
+  # Note: These values will most likely never need to be changed and probably shouln't (depending on use case)
+  endpoint:
+    # The host of the AudioConnect webserver endpoint
+    host: deadmandungeons.com
+    # The port of the AudioConnect webserver endpoint
+    port: 3030
+    # The boolean flag indicating whether to use an SSL (secure) connection with the AudioConnect webserver endpoint
+    # If true (websocket protocol = wss, web protocol = https). If false: (websocket protocol = ws, web protocol = http)
+    secure: false
+
 # Configure settings for reconnecting to the AudioConnect server in the event of an unexpected disconnect.
 # If the reason for the disconnect was because the server refused the conneciton, or if the client was manually
 # disconnected, the client will not attempt to reconnect.
@@ -18,3 +33,9 @@ reconnect:
   # The maximum number of reconnection attempts that will be made before giving up. 
   # If -1, reconnection attempts will continue to be made forever.
   max-attempts: -1
+
+options:
+  # prevent a player from executing any AudioConnect command after this amount of time in seconds from the last executed command
+  command-cooldown: 5
+  # The frequency (in seconds) of audio connect announcement with connection URL for non-connected players. -1 for no announcements
+  announce-frequency: 2700

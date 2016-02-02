@@ -1,20 +1,31 @@
 # Recognized formatting codes: http://www.minecraftwiki.net/wiki/Formatting_codes
-# Example: &cThis text will be red and this link will be underlined &nhttp://deadmandungeons.org
+# Example: &cThis text will be red and this link will be underlined &nhttp://deadmandungeons.com
 
 # Variables will only be recognized in the current messages they are in
 
-primary-color: '&c'
-secondary-color: '&6'
-tertiary-color: '&7'
+primary-color: '&6'
+secondary-color: '&7'
+tertiary-color: '&8'
 
 failed:
   invalid-args: '&cInvalid arguments. Type "/ac help" for a list of commands'
   invalid-args-alt: '&cInvalid arguments. The proper command usage is:'
   no-permission: '&cYou do not have the permission to perform this command'
   player-not-connected: "&cA player named '<player-name>' is not connected to AudioConnect"
+  already-connected: '&cYou are already connected to AudioConnect for this server'
+  not-connected-server: '&cConnection with the AudioConnect web server is not established'
+  invalid-file-name: "&cThe file name '<file-name>' is invalid due to illegal characters or bad structure"
+  invalid-delay-range: '&cThe audio delay <delay-range> is invalid. Valid formats are ''\<min\>-\<max\>'' or ''\<constant\>'''
 
 succeeded:
   reloaded: 'AudioConnect config and language files have been reloaded!'
   audio-msg-sent: 'Audio ID <audio-id> has been sent to be played to <player-name>'
 
-misc: {}
+misc:
+  announcement: 'Experience this server on a whole new level with integrated server audio! '
+  connect-details: |
+      &7Click this URL to listen:
+        
+      &6<connect-url>
+  top-bar: '&8\<&m                             &r&6 Audio Connect &8&m                             &r&8\>'
+  bottom-bar: '&8\<&m                                                                             &r&8\>'

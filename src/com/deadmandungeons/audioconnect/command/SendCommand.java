@@ -11,9 +11,8 @@ import org.deadmandungeons.deadmanplugin.command.CommandInfo;
 import org.deadmandungeons.deadmanplugin.command.SubCommandInfo;
 
 import com.deadmandungeons.audioconnect.AudioConnect;
-import com.deadmandungeons.audioconnect.client.AudioConnectClient;
 import com.deadmandungeons.audioconnect.messages.AudioMessage;
-
+import com.deadmandungeons.audioconnect.messages.AudioMessage.AudioFile;
 
 //@formatter:off
 @CommandInfo(
@@ -24,9 +23,10 @@ import com.deadmandungeons.audioconnect.messages.AudioMessage;
 		@SubCommandInfo(
 			arguments = {
 				@ArgumentInfo(argName = "player-name", argType = ArgType.VARIABLE),
-				@ArgumentInfo(argName = "audio-id", argType = ArgType.VARIABLE)
-			}, 
-			description = "Send a temporarily interrupting AudioMessage to the connected players browser"
+				@ArgumentInfo(argName = "file-name", argType = ArgType.VARIABLE)
+			},
+			description = "Send an AudioMessage to the connected players browser. " 
+					+ "The played audio will overlap with any currently playing audio"
 		)
 	}
 )//@formatter:on
@@ -38,19 +38,30 @@ public class SendCommand implements Command {
 	public boolean execute(CommandSender sender, Arguments args) {
 		Arguments.validateType(args, getClass());
 		
-		String playerName = (String) args.getArgs()[0];
-		String audioId = (String) args.getArgs()[1];
-		
-		Player player = Bukkit.getPlayer(playerName);
-		if (player == null || !AudioConnectClient.getInstance().isPlayerTracked(player.getUniqueId())) {
-			plugin.getMessenger().sendErrorMessage(sender, "failed.player-not-connected", playerName);
+		if (!plugin.getClient().isConnected()) {
+			plugin.getMessenger().sendErrorMessage(sender, "failed.not-connected-server");
 			return false;
 		}
 		
-		AudioMessage audioMessage = AudioMessage.createInterrupting(player.getUniqueId(), audioId);
-		AudioConnectClient.getInstance().writeAndFlush(audioMessage);
+		String playerName = (String) args.getArgs()[0];
+		String fileName = (String) args.getArgs()[1];
 		
-		plugin.getMessenger().sendMessage(sender, "succeeded.audio-msg-sent", audioId, playerName);
+		Player player = Bukkit.getPlayer(playerName);
+		if (player == null || !plugin.getClient().isPlayerTracked(player.getUniqueId())) {
+			plugin.getMessenger().sendErrorMessage(sender, "failed.player-not-connected", playerName);
+			return false;
+		}
+		AudioFile audioFile = AudioFile.create(fileName);
+		if (audioFile == null) {
+			plugin.getMessenger().sendErrorMessage(sender, "failed.invalid-file-name", fileName);
+			return false;
+		}
+		
+		
+		AudioMessage audioMessage = AudioMessage.builder(player.getUniqueId()).audio(audioFile).build();
+		plugin.getClient().writeAndFlush(audioMessage);
+		
+		plugin.getMessenger().sendMessage(sender, "succeeded.audio-msg-sent", fileName, playerName);
 		return true;
 	}
 	

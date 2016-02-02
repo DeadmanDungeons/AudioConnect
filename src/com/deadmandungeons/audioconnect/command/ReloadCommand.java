@@ -1,12 +1,15 @@
 package com.deadmandungeons.audioconnect.command;
 
+import java.util.UUID;
+
+import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.deadmandungeons.deadmanplugin.command.Arguments;
 import org.deadmandungeons.deadmanplugin.command.Command;
 import org.deadmandungeons.deadmanplugin.command.CommandInfo;
 
 import com.deadmandungeons.audioconnect.AudioConnect;
-import com.deadmandungeons.audioconnect.Config;
+import com.deadmandungeons.audioconnect.AudioConnect.Config;
 
 //@formatter:off
 @CommandInfo(
@@ -23,12 +26,32 @@ public class ReloadCommand implements Command {
 	public boolean execute(CommandSender sender, Arguments args) {
 		Arguments.validateType(args, getClass());
 		
-		Config.reload();
-		plugin.getLangFile().reloadConfig();
-		plugin.getMessenger().clearCache();
+		plugin.reloadConfig();
+		plugin.getMessenger().reload();
+		
+		asyncReconnect();
 		
 		plugin.getMessenger().sendMessage(sender, "succeeded.reloaded");
 		return true;
+	}
+	
+	private void asyncReconnect() {
+		Bukkit.getScheduler().runTaskAsynchronously(plugin, new Runnable() {
+			
+			@Override
+			public void run() {
+				plugin.getClient().disconnect();
+				
+				UUID userId = Config.getConnectionUserId();
+				if (userId == null) {
+					String property = Config.CONNECTION_USER_ID.getPath();
+					plugin.getLogger().severe("The required" + property + " config property is missing or invalid! Client cannot be started...");
+					return;
+				}
+				
+				plugin.getClient().connect(userId);
+			}
+		});
 	}
 	
 }
