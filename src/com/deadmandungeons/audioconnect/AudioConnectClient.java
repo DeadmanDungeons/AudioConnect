@@ -112,7 +112,7 @@ public class AudioConnectClient {
 			String protocol = (Config.CONNECTION_SECURE.value() ? "https" : "http");
 			String host = Config.CONNECTION_HOST.value();
 			String path = "/audio-connect";
-			String query = "?supplier-id=" + supplierId + "&id=" + encodedPlayerId;
+			String query = "?sid=" + supplierId + "&cid=" + encodedPlayerId;
 			
 			return protocol + "://" + host + path + query;
 		}
