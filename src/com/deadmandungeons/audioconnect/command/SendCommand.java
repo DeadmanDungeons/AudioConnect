@@ -13,6 +13,7 @@ import org.deadmandungeons.deadmanplugin.command.SubCommandInfo;
 import com.deadmandungeons.audioconnect.AudioConnect;
 import com.deadmandungeons.audioconnect.messages.AudioMessage;
 import com.deadmandungeons.audioconnect.messages.AudioMessage.AudioFile;
+import com.deadmandungeons.connect.commons.Result;
 
 //@formatter:off
 @CommandInfo(
@@ -51,14 +52,14 @@ public class SendCommand implements Command {
 			plugin.getMessenger().sendErrorMessage(sender, "failed.player-not-connected", playerName);
 			return false;
 		}
-		AudioFile audioFile = AudioFile.create(fileName);
-		if (audioFile == null) {
-			plugin.getMessenger().sendErrorMessage(sender, "failed.invalid-file-name", fileName);
+		Result<AudioFile> parseResult = AudioFile.fromFileName(fileName);
+		if (parseResult.isError()) {
+			plugin.getMessenger().sendErrorMessage(sender, "failed.invalid-file-name", fileName, parseResult.getErrorMessage());
 			return false;
 		}
 		
 		
-		AudioMessage audioMessage = AudioMessage.builder(player.getUniqueId()).audio(audioFile).build();
+		AudioMessage audioMessage = AudioMessage.builder(player.getUniqueId()).audio(parseResult.getResult()).build();
 		plugin.getClient().writeAndFlush(audioMessage);
 		
 		plugin.getMessenger().sendMessage(sender, "succeeded.audio-msg-sent", fileName, playerName);

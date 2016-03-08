@@ -23,11 +23,13 @@ public class ConnectCommand implements Command {
 	public boolean execute(CommandSender sender, Arguments args) {
 		Arguments.validateType(args, getClass());
 		
-		Player player = (Player) sender;
-		
+		return execute((Player) sender);
+	}
+	
+	public boolean execute(Player player) {
 		String connectUrl = plugin.getClient().getPlayerConnectUrl(player.getUniqueId());
 		if (connectUrl == null) {
-			plugin.getMessenger().sendErrorMessage(sender, "failed.not-connected-server");
+			plugin.getMessenger().sendErrorMessage(player, "failed.not-connected-server");
 			return false;
 		}
 		if (plugin.getClient().isPlayerTracked(player.getUniqueId())) {

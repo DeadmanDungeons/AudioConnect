@@ -11,15 +11,17 @@ failed:
   invalid-args: '&cInvalid arguments. Type "/ac help" for a list of commands'
   invalid-args-alt: '&cInvalid arguments. The proper command usage is:'
   no-permission: '&cYou do not have the permission to perform this command'
+  not-connected: '&cYou are not connected to AudioConnect. Connect using /ac connect'
   player-not-connected: "&cA player named '<player-name>' is not connected to AudioConnect"
   already-connected: '&cYou are already connected to AudioConnect for this server'
   not-connected-server: '&cConnection with the AudioConnect web server is not established'
-  invalid-file-name: "&cThe file name '<file-name>' is invalid due to illegal characters or bad structure"
+  invalid-file-name: "&cInvalid file name '<file-name>': <reason>"
   invalid-delay-range: '&cThe audio delay <delay-range> is invalid. Valid formats are ''\<min\>-\<max\>'' or ''\<constant\>'''
 
 succeeded:
   reloaded: 'AudioConnect config and language files have been reloaded!'
   audio-msg-sent: 'Audio ID <audio-id> has been sent to be played to <player-name>'
+  volume-set: 'Audio has been <state>'
 
 misc:
   announcement: 'Experience this server on a whole new level with integrated server audio! '

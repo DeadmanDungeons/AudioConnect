@@ -27,20 +27,17 @@ import org.bukkit.metadata.FixedMetadataValue;
 import org.deadmandungeons.deadmanplugin.DeadmanPlugin;
 import org.deadmandungeons.deadmanplugin.DeadmanUtils;
 import org.deadmandungeons.deadmanplugin.Messenger;
-import org.deadmandungeons.deadmanplugin.command.DeadmanExecutor;
 import org.deadmandungeons.deadmanplugin.filedata.DeadmanConfig;
 import org.deadmandungeons.deadmanplugin.filedata.DeadmanConfig.ConfigEntry;
 import org.deadmandungeons.deadmanplugin.filedata.PluginFile;
 
 import com.deadmandungeons.audioconnect.PlayerScheduler.PlayerTaskHandler;
-import com.deadmandungeons.audioconnect.command.ConnectCommand;
-import com.deadmandungeons.audioconnect.command.ListCommand;
-import com.deadmandungeons.audioconnect.command.ReloadCommand;
-import com.deadmandungeons.audioconnect.command.SendCommand;
+import com.deadmandungeons.audioconnect.command.CommandHandler;
 import com.deadmandungeons.audioconnect.messages.AudioMessage;
 import com.deadmandungeons.audioconnect.messages.AudioMessage.AudioFile;
 import com.deadmandungeons.audioconnect.messages.AudioMessage.Range;
 import com.deadmandungeons.connect.commons.ConnectUtils;
+import com.deadmandungeons.connect.commons.Result;
 import com.mewin.WGCustomFlags.WGCustomFlagsPlugin;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.bukkit.util.Locations;
@@ -53,7 +50,8 @@ public final class AudioConnect extends DeadmanPlugin implements Listener {
 	
 	private static final String TRACKING_DATA_METADATA = "AC:tracking-data";
 	private static final Pattern USERNAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_]{2,16}$");
-	private static final Pattern REGION_FLAG_CMD_PATTERN = Pattern.compile("^region (?:flag|f) [\\S]+(?: -w [\\S]+)? ([\\S]+) ([\\S]+)$");
+	private static final String REGION_FLAG_CMD_REGEX = "^region (?:flag|f) [\\S]+(?: -w [\\S]+)? ([\\S]+) ([\\S]+(?: [\\S]+)*?)$";
+	private static final Pattern REGION_FLAG_CMD_PATTERN = Pattern.compile(REGION_FLAG_CMD_REGEX);
 	private static final int REGION_CHECK_DELAY = 3000;
 	private static final int WORLD_TIME_NIGHT_TICKS = 13000;
 	
@@ -93,13 +91,7 @@ public final class AudioConnect extends DeadmanPlugin implements Listener {
 		messenger = new Messenger(this, langFile);
 		
 		getServer().getPluginManager().registerEvents(this, this);
-		
-		DeadmanExecutor executor = new DeadmanExecutor(this, messenger, Config.COMMAND_COOLDOWN.value().intValue());
-		executor.registerCommand(ConnectCommand.class);
-		executor.registerCommand(ListCommand.class);
-		executor.registerCommand(SendCommand.class);
-		executor.registerCommand(ReloadCommand.class);
-		getCommand("ac").setExecutor(executor);
+		getCommand("ac").setExecutor(new CommandHandler(this, messenger));
 		
 		UUID userId = Config.getConnectionUserId();
 		if (userId == null) {
@@ -226,7 +218,11 @@ public final class AudioConnect extends DeadmanPlugin implements Listener {
 		if (audioFileCache.containsKey(audioFileName)) {
 			return audioFileCache.get(audioFileName);
 		} else {
-			AudioFile audioFile = AudioFile.create(audioFileName);
+			Result<AudioFile> parseResult = AudioFile.fromFileName(audioFileName);
+			if (parseResult.isError()) {
+				getLogger().warning("Loaded audio region with invalid file name [" + audioFileName + "]: " + parseResult.getErrorMessage());
+			}
+			AudioFile audioFile = parseResult.getResult();
 			audioFileCache.put(audioFileName, audioFile);
 			return audioFile;
 		}
@@ -268,11 +264,14 @@ public final class AudioConnect extends DeadmanPlugin implements Listener {
 			String flagName = matcher.group(1);
 			if (audioFlag.getName().equalsIgnoreCase(flagName) || audioDayFlag.getName().equalsIgnoreCase(flagName)
 					|| audioNightFlag.getName().equalsIgnoreCase(flagName)) {
-				// validate that the audio file name used in the WorldGuard flag command for an audio flag is valid
-				String audioFileName = matcher.group(2);
-				if (!AudioFile.isValid(audioFileName)) {
-					messenger.sendErrorMessage(sender, "failed.invalid-file-name", audioFileName);
-					event.setCancelled(true);
+				// validate that the audio file names used in the WorldGuard flag command for an audio flag is valid
+				String fileNames = matcher.group(2);
+				for (String fileName : fileNames.split(",")) {
+					Result<AudioFile> parseResult = AudioFile.fromFileName(fileName);
+					if (parseResult.isError()) {
+						messenger.sendErrorMessage(sender, "failed.invalid-file-name", fileName, parseResult.getErrorMessage());
+						event.setCancelled(true);
+					}
 				}
 			} else if (audioDelayFlag.getName().equalsIgnoreCase(flagName)) {
 				// validate that the delay range value used in the WorldGuard flag command for audio-delay flag is valid

@@ -111,7 +111,7 @@ public class AudioConnectClient {
 			String encodedPlayerId = ConnectUtils.encodeUuidBase64(playerId);
 			String protocol = (Config.CONNECTION_SECURE.value() ? "https" : "http");
 			String host = Config.CONNECTION_HOST.value();
-			String path = "/audio-connect";
+			String path = "/audio-connect/connect";
 			String query = "?sid=" + supplierId + "&cid=" + encodedPlayerId;
 			
 			return protocol + "://" + host + path + query;

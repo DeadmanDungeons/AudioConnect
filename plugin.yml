@@ -9,6 +9,12 @@ depend: [DeadmanPlugin, WorldGuard, WorldEdit, WGCustomFlags]
 commands:
     ac:
         description: AudioConnect command prefix. Use "/ac help" to see all the AudioConnect commands you can use.
+    music:
+        description: Alias for /ac connect
+    mute:
+        description: Alias for /ac mute
+    unmute:
+        description: Alias for /ac unmute
 
 permissions:
     audioconnect.*:
