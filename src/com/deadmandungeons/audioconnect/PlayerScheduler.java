@@ -34,7 +34,6 @@ public class PlayerScheduler {
 		int tickDisplacement = tickFrequency / maxSchedulers;
 		for (int i = 0; i < maxSchedulers; i++) {
 			playerTasks.add(new PlayerTask(i, tickDisplacement));
-			System.out.println("addPlayerTask: " + i + " - " + tickDisplacement);
 		}
 	}
 	
@@ -91,7 +90,6 @@ public class PlayerScheduler {
 					// are balanced regardless of load fluctuations
 					int diff = startingTask.index - index;
 					int delay = (diff < 0 ? maxSchedulers + diff : diff) * tickDisplacement;
-					System.out.println("run starting tasks[" + index + "] - index: " + startingTask.index + ", diff: " + diff + ", delay: " + delay);
 					startingTask.task = Bukkit.getScheduler().runTaskTimer(plugin, startingTask, delay, tickFrequency);
 				}
 				startingTasks.clear();
@@ -111,13 +109,10 @@ public class PlayerScheduler {
 		}
 		
 		private boolean addPlayer(UUID playerId, boolean idle) {
-			System.out.println("addPlayer: " + index + ", task: " + (task != null));
 			if (task == null) {
 				if (idle) {
-					System.out.println("start new task");
 					task = Bukkit.getScheduler().runTaskTimer(plugin, this, 0, tickFrequency);
 				} else {
-					System.out.println("add starting task");
 					startingTasks.add(this);
 				}
 			}
