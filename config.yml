@@ -18,7 +18,7 @@ connection:
     port: 3030
     # The boolean flag indicating whether to use an SSL (secure) connection with the AudioConnect webserver endpoint
     # If true (websocket protocol = wss, web protocol = https). If false: (websocket protocol = ws, web protocol = http)
-    secure: false
+    secure: true
 
 # Configure settings for reconnecting to the AudioConnect server in the event of an unexpected disconnect.
 # If the reason for the disconnect was because the server refused the conneciton, or if the client was manually

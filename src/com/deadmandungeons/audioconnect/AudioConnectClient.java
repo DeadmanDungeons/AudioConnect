@@ -12,6 +12,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.net.ssl.SSLException;
+
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
@@ -22,6 +24,7 @@ import com.deadmandungeons.audioconnect.messages.AudioMessage;
 import com.deadmandungeons.connect.commons.CommandMessage;
 import com.deadmandungeons.connect.commons.CommandMessage.Command;
 import com.deadmandungeons.connect.commons.ConnectUtils;
+import com.deadmandungeons.connect.commons.HeartbeatMessage;
 import com.deadmandungeons.connect.commons.Messenger;
 import com.deadmandungeons.connect.commons.Messenger.Message;
 import com.deadmandungeons.connect.commons.Messenger.MessageParseException;
@@ -55,6 +58,8 @@ import io.netty.handler.codec.http.websocketx.WebSocketClientHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketClientHandshakerFactory;
 import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketVersion;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.Future;
 
@@ -160,7 +165,18 @@ public class AudioConnectClient {
 		}
 		
 		logger.info("Connecting to AudioConnect server [" + uri + "] ...");
-		connection = createConnection(userId, uri);
+		
+		SslContext sslContext = null;
+		if (Config.CONNECTION_SECURE.value()) {
+			try {
+				sslContext = SslContext.newClientContext(InsecureTrustManagerFactory.INSTANCE);
+			} catch (SSLException e) {
+				logger.log(Level.SEVERE, "Shutting down client event loop due to unexpected failure to create SSL context", e);
+				return;
+			}
+		}
+		
+		connection = createConnection(userId, uri, sslContext);
 		
 		connection.channel.closeFuture().addListener(new ChannelFutureListener() {
 			
@@ -228,7 +244,7 @@ public class AudioConnectClient {
 		return null;
 	}
 	
-	private Connection createConnection(UUID userId, URI uri) {
+	private Connection createConnection(UUID userId, URI uri, final SslContext sslContext) {
 		final AudioConnectClientHandler handler = new AudioConnectClientHandler(userId, uri);
 		EventLoopGroup group = new NioEventLoopGroup();
 		Bootstrap bootstrap = new Bootstrap();
@@ -246,6 +262,9 @@ public class AudioConnectClient {
 			@Override
 			protected void initChannel(SocketChannel channel) {
 				ChannelPipeline pipeline = channel.pipeline();
+				if (sslContext != null) {
+					pipeline.addLast(sslContext.newHandler(channel.alloc()));
+				}
 				pipeline.addLast(new HttpClientCodec());
 				pipeline.addLast(new HttpObjectAggregator(8192));
 				pipeline.addLast(handler);
@@ -399,10 +418,15 @@ public class AudioConnectClient {
 								}
 							});
 						}
+					} else if (message instanceof HeartbeatMessage) {
+						// If for some reason the server doesn't receive the pong frame, it will send a heartbeat message
+						writeAndFlush(ctx.channel(), message);
 					} else {
 						logger.warning("Recieved unexpected Message type from AudioConnect server '" + message.getType() + "'");
 					}
 				}
+			} else {
+				logger.warning("Recieved unexpected websocket frame from AudioConnect server: " + frame);
 			}
 		}
 		

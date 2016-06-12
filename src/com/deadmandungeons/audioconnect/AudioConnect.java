@@ -109,15 +109,14 @@ public final class AudioConnect extends DeadmanPlugin implements Listener {
 				}
 				synchronized (client) {
 					for (Player player : Bukkit.getOnlinePlayers()) {
-						if (!client.isPlayerTracked(player.getUniqueId())) {
+						if (client.isConnected() && !client.isPlayerTracked(player.getUniqueId())) {
 							String announcement = getMessenger().getMessage("misc.announcement", true);
 							String connectUrl = client.getPlayerConnectUrl(player.getUniqueId());
 							String connectDetails = getMessenger().getMessage("misc.connect-details", true, connectUrl);
-							if (announcement != null && connectDetails != null) {
-								getMessenger().sendMessage(player, "misc.top-bar");
-								player.sendMessage(announcement + connectDetails);
-								getMessenger().sendMessage(player, "misc.bottom-bar");
-							}
+							
+							getMessenger().sendMessage(player, "misc.top-bar");
+							player.sendMessage(announcement + connectDetails);
+							getMessenger().sendMessage(player, "misc.bottom-bar");
 						}
 					}
 				}
