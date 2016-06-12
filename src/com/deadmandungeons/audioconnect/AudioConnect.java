@@ -24,12 +24,12 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.server.ServerCommandEvent;
 import org.bukkit.metadata.FixedMetadataValue;
-import org.deadmandungeons.deadmanplugin.DeadmanPlugin;
-import org.deadmandungeons.deadmanplugin.DeadmanUtils;
-import org.deadmandungeons.deadmanplugin.Messenger;
-import org.deadmandungeons.deadmanplugin.filedata.DeadmanConfig;
-import org.deadmandungeons.deadmanplugin.filedata.DeadmanConfig.ConfigEntry;
-import org.deadmandungeons.deadmanplugin.filedata.PluginFile;
+import com.deadmandungeons.deadmanplugin.DeadmanPlugin;
+import com.deadmandungeons.deadmanplugin.DeadmanUtils;
+import com.deadmandungeons.deadmanplugin.Messenger;
+import com.deadmandungeons.deadmanplugin.filedata.DeadmanConfig;
+import com.deadmandungeons.deadmanplugin.filedata.DeadmanConfig.ConfigEntry;
+import com.deadmandungeons.deadmanplugin.filedata.PluginFile;
 
 import com.deadmandungeons.audioconnect.PlayerScheduler.PlayerTaskHandler;
 import com.deadmandungeons.audioconnect.command.CommandHandler;

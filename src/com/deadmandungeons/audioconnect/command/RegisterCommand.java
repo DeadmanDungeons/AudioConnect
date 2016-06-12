@@ -1,9 +1,9 @@
 package com.deadmandungeons.audioconnect.command;
 
 import org.bukkit.command.CommandSender;
-import org.deadmandungeons.deadmanplugin.command.Arguments;
-import org.deadmandungeons.deadmanplugin.command.Command;
-import org.deadmandungeons.deadmanplugin.command.CommandInfo;
+import com.deadmandungeons.deadmanplugin.command.Arguments;
+import com.deadmandungeons.deadmanplugin.command.Command;
+import com.deadmandungeons.deadmanplugin.command.CommandInfo;
 
 //@formatter:off
 @CommandInfo(

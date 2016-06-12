@@ -3,12 +3,12 @@ package com.deadmandungeons.audioconnect.command;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.deadmandungeons.deadmanplugin.command.ArgumentInfo;
-import org.deadmandungeons.deadmanplugin.command.ArgumentInfo.ArgType;
-import org.deadmandungeons.deadmanplugin.command.Arguments;
-import org.deadmandungeons.deadmanplugin.command.Command;
-import org.deadmandungeons.deadmanplugin.command.CommandInfo;
-import org.deadmandungeons.deadmanplugin.command.SubCommandInfo;
+import com.deadmandungeons.deadmanplugin.command.ArgumentInfo;
+import com.deadmandungeons.deadmanplugin.command.ArgumentInfo.ArgType;
+import com.deadmandungeons.deadmanplugin.command.Arguments;
+import com.deadmandungeons.deadmanplugin.command.Command;
+import com.deadmandungeons.deadmanplugin.command.CommandInfo;
+import com.deadmandungeons.deadmanplugin.command.SubCommandInfo;
 
 import com.deadmandungeons.audioconnect.AudioConnect;
 import com.deadmandungeons.audioconnect.messages.AudioMessage;
