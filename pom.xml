@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.deadmandungeons</groupId>
 	<artifactId>audio-connect</artifactId>
-	<version>1.0.2</version>
+	<version>1.0.3</version>
 	<name>AudioConnect</name>
 	
 	<build>
@@ -60,10 +60,6 @@
 			<id>sk89q-repo</id>
 			<url>http://maven.sk89q.com/repo/</url>
 		</repository>
-		<repository>
-			<id>mewin-repo</id>
-			<url>http://maven.elmakers.com/repository/</url>
-		</repository>
 	</repositories>
 	
 	<dependencies>
@@ -105,16 +101,14 @@
 		</dependency>
 		
 		<dependency>
+			<!-- Use this once Worldguard 6.1.3 is released
 			<groupId>com.sk89q</groupId>
 			<artifactId>worldguard</artifactId>
-			<version>6.1</version>
-			<scope>provided</scope>
-		</dependency>
-		
-		<dependency>
-			<groupId>com.mewin</groupId>
-			<artifactId>WGCustomFlags</artifactId>
-			<version>1.8.1-beta</version>
+			<version>6.1.3</version>
+			 -->
+			<groupId>com.sk89q.worldguard</groupId>
+			<artifactId>worldguard-legacy</artifactId>
+			<version>6.1.3-20160615.013402-1</version>
 			<scope>provided</scope>
 		</dependency>
 		

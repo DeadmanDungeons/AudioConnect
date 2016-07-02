@@ -24,12 +24,6 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.server.ServerCommandEvent;
 import org.bukkit.metadata.FixedMetadataValue;
-import com.deadmandungeons.deadmanplugin.DeadmanPlugin;
-import com.deadmandungeons.deadmanplugin.DeadmanUtils;
-import com.deadmandungeons.deadmanplugin.Messenger;
-import com.deadmandungeons.deadmanplugin.filedata.DeadmanConfig;
-import com.deadmandungeons.deadmanplugin.filedata.DeadmanConfig.ConfigEntry;
-import com.deadmandungeons.deadmanplugin.filedata.PluginFile;
 
 import com.deadmandungeons.audioconnect.PlayerScheduler.PlayerTaskHandler;
 import com.deadmandungeons.audioconnect.command.CommandHandler;
@@ -38,7 +32,12 @@ import com.deadmandungeons.audioconnect.messages.AudioMessage.AudioFile;
 import com.deadmandungeons.audioconnect.messages.AudioMessage.Range;
 import com.deadmandungeons.connect.commons.ConnectUtils;
 import com.deadmandungeons.connect.commons.Result;
-import com.mewin.WGCustomFlags.WGCustomFlagsPlugin;
+import com.deadmandungeons.deadmanplugin.DeadmanPlugin;
+import com.deadmandungeons.deadmanplugin.DeadmanUtils;
+import com.deadmandungeons.deadmanplugin.Messenger;
+import com.deadmandungeons.deadmanplugin.filedata.DeadmanConfig;
+import com.deadmandungeons.deadmanplugin.filedata.DeadmanConfig.ConfigEntry;
+import com.deadmandungeons.deadmanplugin.filedata.PluginFile;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.bukkit.util.Locations;
 import com.sk89q.worldguard.protection.flags.SetFlag;
@@ -73,19 +72,22 @@ public final class AudioConnect extends DeadmanPlugin implements Listener {
 	
 	
 	@Override
-	protected void onPluginEnable() {
-		setConfig(Config.config);
-		
+	protected void onPluginLoad() throws Exception {
 		audioFlag = new SetFlag<String>("audio", new StringFlag(null));
 		audioNightFlag = new SetFlag<String>("audio-night", new StringFlag(null));
 		audioDayFlag = new SetFlag<String>("audio-day", new StringFlag(null));
 		audioDelayFlag = new StringFlag("audio-delay");
 		
-		WGCustomFlagsPlugin customFlags = (WGCustomFlagsPlugin) Bukkit.getPluginManager().getPlugin("WGCustomFlags");
-		customFlags.addCustomFlag(audioFlag);
-		customFlags.addCustomFlag(audioNightFlag);
-		customFlags.addCustomFlag(audioDayFlag);
-		customFlags.addCustomFlag(audioDelayFlag);
+		WorldGuardPlugin worldGuard = (WorldGuardPlugin) Bukkit.getPluginManager().getPlugin("WorldGuard");
+		worldGuard.getFlagRegistry().register(audioFlag);
+		worldGuard.getFlagRegistry().register(audioNightFlag);
+		worldGuard.getFlagRegistry().register(audioDayFlag);
+		worldGuard.getFlagRegistry().register(audioDelayFlag);
+	}
+	
+	@Override
+	protected void onPluginEnable() {
+		setConfig(Config.config);
 		
 		PluginFile langFile = PluginFile.creator(this, LANG_DIRECTORY + "english.yml").defaultFile("english.yml").create();
 		messenger = new Messenger(this, langFile);

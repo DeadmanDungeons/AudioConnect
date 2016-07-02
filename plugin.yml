@@ -1,10 +1,10 @@
 name: AudioConnect
 main: com.deadmandungeons.audioconnect.AudioConnect
-version: 1.0.2
+version: 1.0.3
 author: Weasel_Squeezer
 website: http://www.deadmandungeons.com
 
-depend: [DeadmanPlugin, WorldGuard, WorldEdit, WGCustomFlags]
+depend: [DeadmanPlugin, WorldGuard]
 
 commands:
     ac:
