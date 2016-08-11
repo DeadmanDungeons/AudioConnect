@@ -50,7 +50,7 @@
 	<repositories>
 		<repository>
 			<id>deadman-dungeons</id>
-			<url>http://deadmandungeons.com/artifactory/libs-release-local</url>
+			<url>https://deadmandungeons.com/artifactory/public</url>
 		</repository>
 		<repository>
 			<id>spigot-repo</id>
