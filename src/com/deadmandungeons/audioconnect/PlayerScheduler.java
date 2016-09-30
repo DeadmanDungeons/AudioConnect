@@ -19,7 +19,7 @@ public class PlayerScheduler {
 	private final int maxSchedulers;
 	private final Set<PlayerTask> playerTasks;
 	
-	private final Set<PlayerTask> startingTasks = new HashSet<>();;
+	private final Set<PlayerTask> startingTasks = new HashSet<>();
 	
 	public PlayerScheduler(Plugin plugin, PlayerTaskHandler handler, int tickFrequency, int maxSchedulers) {
 		if (maxSchedulers <= 0 || maxSchedulers > tickFrequency) {

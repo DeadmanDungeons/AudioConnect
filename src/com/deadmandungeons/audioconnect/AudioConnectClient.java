@@ -367,7 +367,7 @@ public class AudioConnectClient {
 				ctx.close();
 			} else if (frame instanceof TextWebSocketFrame) {
 				TextWebSocketFrame textFrame = (TextWebSocketFrame) frame;
-				System.out.println("textFrame: " + textFrame.text());
+				
 				Message[] messages;
 				try {
 					messages = messenger.deserialize(textFrame.text());

@@ -3,17 +3,17 @@ package com.deadmandungeons.audioconnect.command;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+
+import com.deadmandungeons.audioconnect.AudioConnect;
+import com.deadmandungeons.audioconnect.messages.AudioMessage;
+import com.deadmandungeons.audioconnect.messages.AudioMessage.AudioFile;
+import com.deadmandungeons.connect.commons.Result;
 import com.deadmandungeons.deadmanplugin.command.ArgumentInfo;
 import com.deadmandungeons.deadmanplugin.command.ArgumentInfo.ArgType;
 import com.deadmandungeons.deadmanplugin.command.Arguments;
 import com.deadmandungeons.deadmanplugin.command.Command;
 import com.deadmandungeons.deadmanplugin.command.CommandInfo;
 import com.deadmandungeons.deadmanplugin.command.SubCommandInfo;
-
-import com.deadmandungeons.audioconnect.AudioConnect;
-import com.deadmandungeons.audioconnect.messages.AudioMessage;
-import com.deadmandungeons.audioconnect.messages.AudioMessage.AudioFile;
-import com.deadmandungeons.connect.commons.Result;
 
 //@formatter:off
 @CommandInfo(
@@ -26,7 +26,7 @@ import com.deadmandungeons.connect.commons.Result;
 				@ArgumentInfo(argName = "player-name", argType = ArgType.VARIABLE),
 				@ArgumentInfo(argName = "file-name", argType = ArgType.VARIABLE)
 			},
-			description = "Send an AudioMessage to the connected players browser. " 
+			description = "Send an AudioMessage to the connected player's browser. " 
 					+ "The played audio will overlap with any currently playing audio"
 		)
 	}

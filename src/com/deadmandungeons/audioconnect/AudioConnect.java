@@ -4,6 +4,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -40,8 +41,10 @@ import com.deadmandungeons.deadmanplugin.filedata.DeadmanConfig.ConfigEntry;
 import com.deadmandungeons.deadmanplugin.filedata.PluginFile;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.bukkit.util.Locations;
+import com.sk89q.worldguard.protection.ApplicableRegionSet;
 import com.sk89q.worldguard.protection.flags.SetFlag;
 import com.sk89q.worldguard.protection.flags.StringFlag;
+import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 
 
@@ -51,6 +54,7 @@ public final class AudioConnect extends DeadmanPlugin implements Listener {
 	private static final Pattern USERNAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_]{2,16}$");
 	private static final String REGION_FLAG_CMD_REGEX = "^region (?:flag|f) [\\S]+(?: -w [\\S]+)? ([\\S]+) ([\\S]+(?: [\\S]+)*?)$";
 	private static final Pattern REGION_FLAG_CMD_PATTERN = Pattern.compile(REGION_FLAG_CMD_REGEX);
+	private static final String GLOBAL_REGION_ID = "__global__";
 	private static final int REGION_CHECK_DELAY = 3000;
 	private static final int WORLD_TIME_NIGHT_TICKS = 13000;
 	
@@ -150,13 +154,20 @@ public final class AudioConnect extends DeadmanPlugin implements Listener {
 		Set<AudioFile> audioFiles = new HashSet<>();
 		Range delayRange = null;
 		
-		int priority = 0;
 		Location loc = player.getLocation();
-		for (ProtectedRegion region : WorldGuardPlugin.inst().getRegionManager(loc.getWorld()).getApplicableRegions(loc)) {
-			if (region.getPriority() > priority) {
+		RegionManager regionManager = WorldGuardPlugin.inst().getRegionManager(loc.getWorld());
+		ApplicableRegionSet regions = regionManager.getApplicableRegions(loc);
+		Iterator<ProtectedRegion> iterator = regions.iterator();
+		
+		int previousPriority = 0;
+		ProtectedRegion globalRegion = regionManager.getRegion(GLOBAL_REGION_ID);
+		for (int i = 0; i <= regions.size(); i++) {
+			ProtectedRegion region = (i > 0 ? iterator.next() : globalRegion);
+			
+			if (region.getPriority() > previousPriority) {
 				audioFiles.clear();
 			}
-			if (region.getPriority() >= priority) {
+			if (region.getPriority() >= previousPriority) {
 				Set<String> audioFileNames = region.getFlag(audioFlag);
 				if (audioFileNames != null) {
 					addAllAudioFiles(audioFiles, audioFileNames);
@@ -182,7 +193,7 @@ public final class AudioConnect extends DeadmanPlugin implements Listener {
 					}
 				}
 				
-				priority = region.getPriority();
+				previousPriority = region.getPriority();
 			}
 		}
 		
@@ -365,7 +376,9 @@ public final class AudioConnect extends DeadmanPlugin implements Listener {
 				return createUri((secure.value() ? "wss" : "ws"), host.value(), port.value().intValue(), "/supplier");
 			} catch (URISyntaxException e1) {
 				try {
-					return createUri((secure.defaultValue() ? "wss" : "ws"), host.defaultValue(), port.defaultValue().intValue(), "/supplier");
+					URI uri = createUri((secure.defaultValue() ? "wss" : "ws"), host.defaultValue(), port.defaultValue().intValue(), "/supplier");
+					getInstance().getLogger().warning("Invalid host syntax at " + host.getPath() + " in config. Using default URI " + uri);
+					return uri;
 				} catch (URISyntaxException e2) {
 					String paths = StringUtils.join(new String[] { secure.getPath(), host.getPath(), port.getPath() }, ", ");
 					throw new IllegalStateException("A URI for the config values at paths (" + paths + ") in the default configuration file "
