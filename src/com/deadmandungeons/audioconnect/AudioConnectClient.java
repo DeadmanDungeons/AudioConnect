@@ -18,6 +18,7 @@ import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Event;
 
 import com.deadmandungeons.audioconnect.AudioConnect.Config;
 import com.deadmandungeons.audioconnect.messages.AudioMessage;
@@ -127,19 +128,25 @@ public class AudioConnectClient {
 	public synchronized void notifyPlayerJoin(Player player) {
 		UUID playerId = player.getUniqueId();
 		if (connection != null && connection.handler.offlinePlayers.remove(playerId)) {
-			StatusMessage statusMessage = new StatusMessage(playerId, Status.CONNECTED);
+			Status status = Status.CONNECTED;
+			StatusMessage statusMessage = new StatusMessage(playerId, status);
 			AudioMessage audioMessage = plugin.createAudioMessage(player);
 			
 			writeAndFlush(statusMessage, audioMessage);
 			playerScheduler.addPlayer(playerId);
+			
+			Bukkit.getPluginManager().callEvent(new PlayerAudioStatusEvent(player, status));
 		}
 	}
 	
 	public synchronized void notifyPlayerQuit(Player player) {
 		UUID playerId = player.getUniqueId();
 		if (isPlayerTracked(playerId) && connection.handler.offlinePlayers.add(playerId)) {
-			writeAndFlush(new StatusMessage(playerId, Status.DISCONNECTED));
+			Status status = Status.DISCONNECTED;
+			writeAndFlush(new StatusMessage(playerId, status));
 			playerScheduler.removePlayer(playerId);
+			
+			Bukkit.getPluginManager().callEvent(new PlayerAudioStatusEvent(player, status));
 		}
 	}
 	
@@ -396,6 +403,8 @@ public class AudioConnectClient {
 										AudioMessage audioMessage = plugin.createAudioMessage((Player) player);
 										
 										writeAndFlush(ctx.channel(), statusMessage, audioMessage);
+										
+										Bukkit.getPluginManager().callEvent(new PlayerAudioStatusEvent(player, Status.CONNECTED));
 									} else {
 										offlinePlayers.add(playerId);
 										
@@ -414,7 +423,10 @@ public class AudioConnectClient {
 								
 								@Override
 								public void run() {
-									playerScheduler.removePlayer(playerId);
+									if (playerScheduler.removePlayer(playerId)) {
+										Event statusEvent = new PlayerAudioStatusEvent(Bukkit.getOfflinePlayer(playerId), Status.DISCONNECTED);
+										Bukkit.getPluginManager().callEvent(statusEvent);
+									}
 								}
 							});
 						}
