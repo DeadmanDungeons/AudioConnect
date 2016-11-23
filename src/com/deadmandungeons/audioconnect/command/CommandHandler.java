@@ -4,22 +4,22 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+
+import com.deadmandungeons.audioconnect.AudioConnect;
+import com.deadmandungeons.audioconnect.messages.AudioCommandMessage;
+import com.deadmandungeons.audioconnect.messages.AudioCommandMessage.AudioCommand;
 import com.deadmandungeons.deadmanplugin.Messenger;
 import com.deadmandungeons.deadmanplugin.command.Arguments;
 import com.deadmandungeons.deadmanplugin.command.Command;
 import com.deadmandungeons.deadmanplugin.command.CommandInfo;
 import com.deadmandungeons.deadmanplugin.command.DeadmanExecutor;
 
-import com.deadmandungeons.audioconnect.AudioConnect;
-import com.deadmandungeons.audioconnect.AudioConnect.Config;
-import com.deadmandungeons.connect.commons.CommandMessage;
-
 public class CommandHandler extends DeadmanExecutor {
 	
 	private final AudioConnect plugin;
 	
-	public CommandHandler(AudioConnect plugin, Messenger messenger) {
-		super(plugin, messenger, Config.COMMAND_COOLDOWN.value().intValue());
+	public CommandHandler(AudioConnect plugin, Messenger messenger, int commandCooldown) {
+		super(plugin, messenger, commandCooldown);
 		this.plugin = plugin;
 		
 		registerCommand(ConnectCommand.class);
@@ -39,13 +39,13 @@ public class CommandHandler extends DeadmanExecutor {
 	
 	
 	private boolean controlVolume(Player player, boolean mute) {
-		if (!plugin.getClient().isPlayerTracked(player.getUniqueId())) {
+		if (!plugin.getClient().isPlayerConnected(player.getUniqueId())) {
 			plugin.getMessenger().sendErrorMessage(player, "failed.not-connected");
 			return false;
 		}
 		
-		CommandMessage.Command cmd = (mute ? CommandMessage.Command.MUTE : CommandMessage.Command.UNMUTE);
-		CommandMessage message = new CommandMessage(player.getUniqueId(), cmd);
+		AudioCommand cmd = (mute ? AudioCommand.MUTE : AudioCommand.UNMUTE);
+		AudioCommandMessage message = new AudioCommandMessage(player.getUniqueId(), cmd);
 		plugin.getClient().writeAndFlush(message);
 		
 		plugin.getMessenger().sendMessage(player, "succeeded.volume-set", (mute ? "muted" : "unmuted"));

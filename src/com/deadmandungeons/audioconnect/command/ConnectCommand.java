@@ -2,11 +2,11 @@ package com.deadmandungeons.audioconnect.command;
 
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+
+import com.deadmandungeons.audioconnect.AudioConnect;
 import com.deadmandungeons.deadmanplugin.command.Arguments;
 import com.deadmandungeons.deadmanplugin.command.Command;
 import com.deadmandungeons.deadmanplugin.command.CommandInfo;
-
-import com.deadmandungeons.audioconnect.AudioConnect;
 
 //@formatter:off
 @CommandInfo(
@@ -32,7 +32,7 @@ public class ConnectCommand implements Command {
 			plugin.getMessenger().sendErrorMessage(player, "failed.not-connected-server");
 			return false;
 		}
-		if (plugin.getClient().isPlayerTracked(player.getUniqueId())) {
+		if (plugin.getClient().isPlayerConnected(player.getUniqueId())) {
 			plugin.getMessenger().sendErrorMessage(player, "failed.already-connected");
 			return false;
 		}

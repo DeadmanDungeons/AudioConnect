@@ -15,12 +15,14 @@ failed:
   player-not-connected: "&cA player named '<player-name>' is not connected to AudioConnect"
   already-connected: '&cYou are already connected to AudioConnect for this server'
   not-connected-server: '&cConnection with the AudioConnect web server is not established'
-  invalid-file-name: "&cInvalid file name '<file-name>': <reason>"
+  audio-not-uploaded: 'An audio file with this ID has not been uploaded'
+  invalid-audio-id: "&cInvalid audio ID '<file-name>': <reason>"
+  invalid-track-id: "&cInvalid track ID '<file-name>': <reason>"
   invalid-delay-range: '&cThe audio delay <delay-range> is invalid. Valid formats are ''\<min\>-\<max\>'' or ''\<constant\>'''
 
 succeeded:
   reloaded: 'AudioConnect config and language files have been reloaded!'
-  audio-msg-sent: 'Audio ID <audio-id> has been sent to be played to <player-name>'
+  audio-msg-sent: 'Audio <audio-id> has been sent to <player-name>'
   volume-set: 'Audio has been <state>'
 
 misc:

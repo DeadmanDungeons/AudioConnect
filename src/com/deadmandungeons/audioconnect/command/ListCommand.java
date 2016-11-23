@@ -1,10 +1,15 @@
 package com.deadmandungeons.audioconnect.command;
 
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Set;
 
 import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
+
+import com.deadmandungeons.audioconnect.AudioConnect;
+import com.deadmandungeons.audioconnect.AudioConnectClient.ConnectedPlayer;
 import com.deadmandungeons.deadmanplugin.DeadmanUtils;
 import com.deadmandungeons.deadmanplugin.command.ArgumentInfo;
 import com.deadmandungeons.deadmanplugin.command.ArgumentInfo.ArgType;
@@ -12,9 +17,6 @@ import com.deadmandungeons.deadmanplugin.command.Arguments;
 import com.deadmandungeons.deadmanplugin.command.Command;
 import com.deadmandungeons.deadmanplugin.command.CommandInfo;
 import com.deadmandungeons.deadmanplugin.command.SubCommandInfo;
-
-import com.deadmandungeons.audioconnect.AudioConnect;
-import com.deadmandungeons.audioconnect.AudioConnectClient.TrackingInfo;
 
 //@formatter:off
 @CommandInfo(
@@ -24,9 +26,17 @@ import com.deadmandungeons.audioconnect.AudioConnectClient.TrackingInfo;
 	subCommands = {
 		@SubCommandInfo(
 			arguments = {
+				@ArgumentInfo(argName = "players", argType = ArgType.NON_VARIABLE),
 				@ArgumentInfo(argName = "page", argType = ArgType.OPT_VARIABLE, varType = Integer.class)
 			},
 			description = "List all online players that are connected to AudioConnect"
+		),
+		@SubCommandInfo(
+			arguments = {
+				@ArgumentInfo(argName = "audio", argType = ArgType.NON_VARIABLE),
+				@ArgumentInfo(argName = "page", argType = ArgType.OPT_VARIABLE, varType = Integer.class)
+			},
+			description = "List all the available audio files that have been uploaded to the AudioConnect server"
 		)
 	}
 )//@formatter:on
@@ -43,10 +53,38 @@ public class ListCommand implements Command {
 			return false;
 		}
 		
-		int pageNum = (args.getArgs().length == 1 ? (Integer) args.getArgs()[0] : 1);
+		int pageNum = (args.getArgs().length == 2 ? (Integer) args.getArgs()[1] : 1);
 		
-		Set<TrackingInfo> trackedPlayers = plugin.getClient().getTrackedPlayers();
-		TrackingInfo[] list = trackedPlayers.toArray(new TrackingInfo[trackedPlayers.size()]);
+		if (args.getSubCmdIndex() == 0) {
+			listPlayers(sender, pageNum);
+			return true;
+		} else if (args.getSubCmdIndex() == 1) {
+			listAudio(sender, pageNum);
+			return true;
+		}
+		return false;
+	}
+	
+	
+	private void listPlayers(CommandSender sender, int pageNum) {
+		Set<ConnectedPlayer> connectedPlayers = plugin.getClient().getConnectedPlayers();
+		ConnectedPlayer[] list = connectedPlayers.toArray(new ConnectedPlayer[connectedPlayers.size()]);
+		Arrays.sort(list, new Comparator<ConnectedPlayer>() {
+			// Sort players alphabetically. Players with a known username appear first.
+			@Override
+			public int compare(ConnectedPlayer a, ConnectedPlayer b) {
+				String aName = a.getPlayer().getName(), bName = b.getPlayer().getName();
+				if (aName != null && bName != null) {
+					return aName.compareTo(bName);
+				} else if (aName == null && bName == null) {
+					return a.getPlayer().getUniqueId().compareTo(b.getPlayer().getUniqueId());
+				} else if (aName == null) {
+					return 1;
+				} else {
+					return -1;
+				}
+			}
+		});
 		
 		int itemsPerPage = 10;
 		int maxPage = list.length / itemsPerPage + (list.length % itemsPerPage > 0 ? 1 : 0);
@@ -91,7 +129,44 @@ public class ListCommand implements Command {
 		}
 		
 		sender.sendMessage(barLeft + "---------------------------------------------------" + barRight);
-		return true;
+	}
+	
+	private void listAudio(CommandSender sender, int pageNum) {
+		Set<String> audioIds = plugin.getAudioList().getAudioIds();
+		String[] list = audioIds.toArray(new String[audioIds.size()]);
+		Arrays.sort(list);
+		
+		int itemsPerPage = 10;
+		int maxPage = list.length / itemsPerPage + (list.length % itemsPerPage > 0 ? 1 : 0);
+		if (pageNum * itemsPerPage > list.length + (itemsPerPage - 1)) {
+			pageNum = maxPage;
+		}
+		
+		ChatColor color1 = plugin.getMessenger().getPrimaryColor();
+		ChatColor color2 = plugin.getMessenger().getSecondaryColor();
+		ChatColor color3 = plugin.getMessenger().getTertiaryColor();
+		
+		String reset = ChatColor.RESET.toString();
+		String barLeft = color3 + "<" + ChatColor.STRIKETHROUGH;
+		String barRight = reset + color3 + ">";
+		
+		String paging = (list.length > itemsPerPage ? "[pg. " + pageNum + "/" + maxPage + "] " : "");
+		String barSpace = (paging.isEmpty() ? "-----" : "");
+		String title = reset + color2 + " Audio List " + paging + color3;
+		String topBar = "----------------" + barSpace + title + ChatColor.STRIKETHROUGH + barSpace + "----------------";
+		sender.sendMessage(barLeft + topBar + barRight);
+		
+		if (list.length == 0) {
+			sender.sendMessage(ChatColor.RED + "  * NONE *");
+		}
+		
+		for (int i = 0; i < list.length && i < (pageNum * itemsPerPage); i++) {
+			if (i >= (pageNum - 1) * itemsPerPage) {
+				sender.sendMessage("  " + color1 + list[i]);
+			}
+		}
+		
+		sender.sendMessage(barLeft + "---------------------------------------------------" + barRight);
 	}
 	
 }

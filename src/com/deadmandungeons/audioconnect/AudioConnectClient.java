@@ -2,7 +2,9 @@ package com.deadmandungeons.audioconnect;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -19,11 +21,13 @@ import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
+import org.bukkit.plugin.Plugin;
 
-import com.deadmandungeons.audioconnect.AudioConnect.Config;
+import com.deadmandungeons.audioconnect.AudioConnectConfig.AudioTrackSettings;
+import com.deadmandungeons.audioconnect.PlayerScheduler.PlayerDataWriter;
+import com.deadmandungeons.audioconnect.messages.AudioListMessage;
 import com.deadmandungeons.audioconnect.messages.AudioMessage;
-import com.deadmandungeons.connect.commons.CommandMessage;
-import com.deadmandungeons.connect.commons.CommandMessage.Command;
+import com.deadmandungeons.audioconnect.messages.AudioTrackMessage;
 import com.deadmandungeons.connect.commons.ConnectUtils;
 import com.deadmandungeons.connect.commons.HeartbeatMessage;
 import com.deadmandungeons.connect.commons.Messenger;
@@ -62,25 +66,34 @@ import io.netty.handler.codec.http.websocketx.WebSocketVersion;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.netty.util.AttributeKey;
-import io.netty.util.concurrent.Future;
 
 public class AudioConnectClient {
 	
 	private static final AttributeKey<String> CONNECTION_SUPPLIER_ID = AttributeKey.valueOf("connection-supplier-id");
 	private static final AttributeKey<Boolean> CONNECTION_REFUSED = AttributeKey.valueOf("connection-refused");
 	
-	private final AudioConnect plugin;
-	private final PlayerScheduler playerScheduler;
+	private final Plugin plugin;
+	private final AudioConnectConfig config;
+	private final AudioList audioList;
+	private final PlayerAudioDataWriter dataWriter;
+	
+	private final PlayerScheduler scheduler; // only accessed on main MC thread
 	private final Messenger messenger;
 	private final Logger logger;
 	
 	private final AtomicInteger reconnectAttempts = new AtomicInteger();
 	private volatile Connection connection;
 	
-	public AudioConnectClient(AudioConnect plugin, PlayerScheduler playerScheduler) {
+	public AudioConnectClient(Plugin plugin, AudioConnectConfig config, AudioList audioList, PlayerAudioDataWriter dataWriter) {
 		this.plugin = plugin;
-		this.playerScheduler = playerScheduler;
-		messenger = Messenger.builder().registerMessageType(AudioMessage.CREATOR).build();
+		this.config = config;
+		this.audioList = audioList;
+		this.dataWriter = dataWriter;
+		
+		// execute every 20 ticks (1 second) with max of 5 displaced scheduler tasks
+		scheduler = new PlayerScheduler(plugin, dataWriter, 20, 5);
+		messenger = Messenger.builder().registerMessageType(AudioMessage.CREATOR).registerMessageType(AudioListMessage.CREATOR)
+				.registerMessageType(AudioTrackMessage.CREATOR).build();
 		logger = plugin.getLogger();
 	}
 	
@@ -89,22 +102,22 @@ public class AudioConnectClient {
 		return connection != null;
 	}
 	
-	public synchronized boolean isPlayerTracked(UUID playerId) {
-		return connection != null && connection.handler.trackedPlayers.containsKey(playerId);
+	public synchronized boolean isPlayerConnected(UUID playerId) {
+		return connection != null && connection.handler.connectedPlayers.containsKey(playerId);
 	}
 	
 	public synchronized String getSupplierId() {
 		return (connection != null ? connection.channel.attr(CONNECTION_SUPPLIER_ID).get() : null);
 	}
 	
-	public synchronized Set<TrackingInfo> getTrackedPlayers() {
-		Set<TrackingInfo> trackedPlayers = new HashSet<>();
+	public synchronized Set<ConnectedPlayer> getConnectedPlayers() {
+		Set<ConnectedPlayer> connectedPlayers = new HashSet<>();
 		if (connection != null) {
-			for (TrackingInfo trackedPlayer : connection.handler.trackedPlayers.values()) {
-				trackedPlayers.add(trackedPlayer);
+			for (ConnectedPlayer connectedPlayer : connection.handler.connectedPlayers.values()) {
+				connectedPlayers.add(connectedPlayer);
 			}
 		}
-		return trackedPlayers;
+		return connectedPlayers;
 	}
 	
 	/**
@@ -115,8 +128,8 @@ public class AudioConnectClient {
 		String supplierId = getSupplierId();
 		if (supplierId != null) {
 			String encodedPlayerId = ConnectUtils.encodeUuidBase64(playerId);
-			String protocol = (Config.CONNECTION_SECURE.value() ? "https" : "http");
-			String host = Config.CONNECTION_HOST.value();
+			String protocol = (config.isConnectionSecure() ? "https" : "http");
+			String host = config.getConnectionHost();
 			String path = "/audio-connect/connect";
 			String query = "?sid=" + supplierId + "&cid=" + encodedPlayerId;
 			
@@ -128,23 +141,20 @@ public class AudioConnectClient {
 	public synchronized void notifyPlayerJoin(Player player) {
 		UUID playerId = player.getUniqueId();
 		if (connection != null && connection.handler.offlinePlayers.remove(playerId)) {
-			Status status = Status.CONNECTED;
-			StatusMessage statusMessage = new StatusMessage(playerId, status);
-			AudioMessage audioMessage = plugin.createAudioMessage(player);
+			scheduler.addPlayer(playerId);
 			
-			writeAndFlush(statusMessage, audioMessage);
-			playerScheduler.addPlayer(playerId);
+			writeAndFlush(createInitialPayload(player));
 			
-			Bukkit.getPluginManager().callEvent(new PlayerAudioStatusEvent(player, status));
+			Bukkit.getPluginManager().callEvent(new PlayerAudioStatusEvent(player, Status.CONNECTED));
 		}
 	}
 	
 	public synchronized void notifyPlayerQuit(Player player) {
 		UUID playerId = player.getUniqueId();
-		if (isPlayerTracked(playerId) && connection.handler.offlinePlayers.add(playerId)) {
+		if (isPlayerConnected(playerId) && connection.handler.offlinePlayers.add(playerId)) {
 			Status status = Status.DISCONNECTED;
 			writeAndFlush(new StatusMessage(playerId, status));
-			playerScheduler.removePlayer(playerId);
+			scheduler.removePlayer(playerId);
 			
 			Bukkit.getPluginManager().callEvent(new PlayerAudioStatusEvent(player, status));
 		}
@@ -158,8 +168,10 @@ public class AudioConnectClient {
 		writeAndFlush(connection.channel, messages);
 	}
 	
-	public synchronized void connect(UUID userId) {
-		URI uri = Config.getConnectionEndpointUri();
+	public synchronized void connect() {
+		URI uri = config.getConnectionEndpointUri();
+		UUID userId = config.getConnectionUserId();
+		
 		connect(uri, userId, false);
 	}
 	
@@ -174,7 +186,7 @@ public class AudioConnectClient {
 		logger.info("Connecting to AudioConnect server [" + uri + "] ...");
 		
 		SslContext sslContext = null;
-		if (Config.CONNECTION_SECURE.value()) {
+		if (config.isConnectionSecure()) {
 			try {
 				sslContext = SslContext.newClientContext(InsecureTrustManagerFactory.INSTANCE);
 			} catch (SSLException e) {
@@ -183,7 +195,7 @@ public class AudioConnectClient {
 			}
 		}
 		
-		connection = createConnection(userId, uri, sslContext);
+		connection = createConnection(uri, userId, sslContext);
 		
 		connection.channel.closeFuture().addListener(new ChannelFutureListener() {
 			
@@ -199,19 +211,20 @@ public class AudioConnectClient {
 						shutdown();
 						return;
 					}
-					int maxReconnectAttempts = Config.RECONNECT_MAX_ATTEMPTS.value().intValue();
+					int maxReconnectAttempts = config.getReconnectMaxAttempts();
 					if (maxReconnectAttempts > 0 && reconnectAttempts.get() >= maxReconnectAttempts) {
 						logger.info("The maximum amount of reconnect attempts have been made. Shutting down client event loop");
 						shutdown();
 						return;
 					}
 					
+					clearPlayers();
 					connection = null;
 					
-					int interval = Config.RECONNECT_INTERVAL.value().intValue();
-					double delayRate = Config.RECONNECT_DELAY.value().doubleValue();
+					int interval = config.getReconnectInterval();
+					double delayRate = config.getReconnectDelay();
 					int delay = (int) (interval * Math.pow(delayRate, reconnectAttempts.get()));
-					int maxInterval = Config.RECONNECT_MAX_INTERVAL.value().intValue();
+					int maxInterval = config.getReconnectMaxInterval();
 					if (delay > maxInterval) {
 						delay = maxInterval;
 					}
@@ -232,27 +245,33 @@ public class AudioConnectClient {
 		});
 	}
 	
-	public void disconnect() {
-		if (connection != null) {
-			shutdown().awaitUninterruptibly();
-		}
+	public synchronized void disconnect() {
+		shutdown();
 	}
 	
-	private Future<?> shutdown() {
+	private void shutdown() {
 		Connection connection = this.connection;
 		if (connection != null) {
 			this.connection = null;
-			Future<?> future = connection.group.shutdownGracefully();
-			connection.handler.trackedPlayers.clear();
-			connection.handler.offlinePlayers.clear();
-			playerScheduler.clear();
-			return future;
+			connection.group.shutdownGracefully();
+			clearPlayers();
 		}
-		return null;
 	}
 	
-	private Connection createConnection(UUID userId, URI uri, final SslContext sslContext) {
-		final AudioConnectClientHandler handler = new AudioConnectClientHandler(userId, uri);
+	private void clearPlayers() {
+		connection.handler.connectedPlayers.clear();
+		connection.handler.offlinePlayers.clear();
+		scheduler.clear();
+	}
+	
+	private Connection createConnection(URI uri, UUID userId, final SslContext sslContext) {
+		DefaultHttpHeaders headers = new DefaultHttpHeaders();
+		headers.add(Messenger.USER_ID_HEADER, userId.toString());
+		
+		// Connect with V13 (RFC 6455 aka HyBi-17)
+		WebSocketClientHandshaker handshaker = WebSocketClientHandshakerFactory.newHandshaker(uri, WebSocketVersion.V13, null, false, headers);
+		final AudioConnectClientHandler handler = new AudioConnectClientHandler(handshaker);
+		
 		EventLoopGroup group = new NioEventLoopGroup();
 		Bootstrap bootstrap = new Bootstrap();
 		bootstrap.group(group);
@@ -304,6 +323,34 @@ public class AudioConnectClient {
 		channel.writeAndFlush(new TextWebSocketFrame(json), channel.voidPromise());
 	}
 	
+	private Message[] createInitialPayload(Player player) {
+		List<Message> messages = new ArrayList<>();
+		
+		Status status = Status.CONNECTED;
+		messages.add(new StatusMessage(player.getUniqueId(), status));
+		
+		for (Map.Entry<String, AudioTrackSettings> entry : config.getAudioTracks().entrySet()) {
+			AudioTrackMessage.Builder messageBuilder = AudioTrackMessage.builder(player.getUniqueId(), entry.getKey());
+			if (entry.getValue().isDefaultTrack()) {
+				messageBuilder.defaultTrack();
+			}
+			if (entry.getValue().isRepeating()) {
+				messageBuilder.repeating();
+			}
+			if (entry.getValue().isRandom()) {
+				messageBuilder.random();
+			}
+			if (entry.getValue().isFading()) {
+				messageBuilder.fading();
+			}
+			messages.add(messageBuilder.build());
+		}
+		
+		dataWriter.writeAudioMessages(player, messages);
+		
+		return messages.toArray(new Message[messages.size()]);
+	}
+	
 	
 	private class Connection {
 		
@@ -322,17 +369,13 @@ public class AudioConnectClient {
 	
 	private class AudioConnectClientHandler extends SimpleChannelInboundHandler<Object> {
 		
-		private final Map<UUID, TrackingInfo> trackedPlayers = new ConcurrentHashMap<>();
+		private final Map<UUID, ConnectedPlayer> connectedPlayers = new ConcurrentHashMap<>();
 		private final Set<UUID> offlinePlayers = Sets.newConcurrentHashSet();
 		
 		private final WebSocketClientHandshaker handshaker;
 		
-		private AudioConnectClientHandler(UUID userId, URI uri) {
-			DefaultHttpHeaders headers = new DefaultHttpHeaders();
-			headers.add(Messenger.USER_ID_HEADER, userId.toString());
-			
-			// Connect with V13 (RFC 6455 aka HyBi-17)
-			handshaker = WebSocketClientHandshakerFactory.newHandshaker(uri, WebSocketVersion.V13, null, false, headers);
+		private AudioConnectClientHandler(WebSocketClientHandshaker handshaker) {
+			this.handshaker = handshaker;
 		}
 		
 		@Override
@@ -350,7 +393,7 @@ public class AudioConnectClient {
 					return;
 				}
 				
-				handleMessage(ctx, (WebSocketFrame) msg);
+				handleFrame(ctx, (WebSocketFrame) msg);
 			}
 		}
 		
@@ -358,88 +401,6 @@ public class AudioConnectClient {
 		public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
 			logger.log(Level.WARNING, "Reconnecting to AudioConnect server due to an unexpected exception", cause);
 			ctx.close();
-		}
-		
-		private void handleMessage(final ChannelHandlerContext ctx, WebSocketFrame frame) {
-			if (frame instanceof PingWebSocketFrame) {
-				ctx.writeAndFlush(new PongWebSocketFrame(frame.content().retain()), ctx.voidPromise());
-			} else if (frame instanceof PongWebSocketFrame) {
-				logger.info("Recieved pong from AudioConnect server");
-			} else if (frame instanceof CloseWebSocketFrame) {
-				CloseWebSocketFrame closeFrame = (CloseWebSocketFrame) frame;
-				logger.info("Recieved closing from AudioConnect server: [" + closeFrame.statusCode() + "] " + closeFrame.reasonText());
-				
-				trackedPlayers.clear();
-				offlinePlayers.clear();
-				ctx.close();
-			} else if (frame instanceof TextWebSocketFrame) {
-				TextWebSocketFrame textFrame = (TextWebSocketFrame) frame;
-				
-				Message[] messages;
-				try {
-					messages = messenger.deserialize(textFrame.text());
-				} catch (MessageParseException e) {
-					logger.warning("Failed to parse Message recieved from AudioConnect server: " + e.getMessage());
-					return;
-				}
-				
-				for (Message message : messages) {
-					if (message instanceof CommandMessage) {
-						CommandMessage commandMessage = (CommandMessage) message;
-						
-						if (commandMessage.getData() == Command.ADD) {
-							final UUID playerId = commandMessage.getId();
-							trackedPlayers.put(playerId, new TrackingInfo(playerId, System.currentTimeMillis()));
-							
-							Bukkit.getScheduler().runTask(plugin, new Runnable() {
-								
-								@Override
-								public void run() {
-									OfflinePlayer player = Bukkit.getOfflinePlayer(playerId);
-									if (player.isOnline()) {
-										playerScheduler.addPlayer(playerId);
-										
-										StatusMessage statusMessage = new StatusMessage(playerId, Status.CONNECTED);
-										AudioMessage audioMessage = plugin.createAudioMessage((Player) player);
-										
-										writeAndFlush(ctx.channel(), statusMessage, audioMessage);
-										
-										Bukkit.getPluginManager().callEvent(new PlayerAudioStatusEvent(player, Status.CONNECTED));
-									} else {
-										offlinePlayers.add(playerId);
-										
-										StatusMessage statusMessage = new StatusMessage(playerId, Status.DISCONNECTED);
-										writeAndFlush(ctx.channel(), statusMessage);
-									}
-								}
-								
-							});
-						} else if (commandMessage.getData() == Command.REMOVE) {
-							final UUID playerId = commandMessage.getId();
-							trackedPlayers.remove(playerId);
-							offlinePlayers.remove(playerId);
-							
-							Bukkit.getScheduler().runTask(plugin, new Runnable() {
-								
-								@Override
-								public void run() {
-									if (playerScheduler.removePlayer(playerId)) {
-										Event statusEvent = new PlayerAudioStatusEvent(Bukkit.getOfflinePlayer(playerId), Status.DISCONNECTED);
-										Bukkit.getPluginManager().callEvent(statusEvent);
-									}
-								}
-							});
-						}
-					} else if (message instanceof HeartbeatMessage) {
-						// If for some reason the server doesn't receive the pong frame, it will send a heartbeat message
-						writeAndFlush(ctx.channel(), message);
-					} else {
-						logger.warning("Recieved unexpected Message type from AudioConnect server '" + message.getType() + "'");
-					}
-				}
-			} else {
-				logger.warning("Recieved unexpected websocket frame from AudioConnect server: " + frame);
-			}
 		}
 		
 		private void handleHandshakeResponse(ChannelHandlerContext ctx, FullHttpResponse response) {
@@ -468,15 +429,112 @@ public class AudioConnectClient {
 			ctx.close();
 		}
 		
+		private void handleFrame(ChannelHandlerContext ctx, WebSocketFrame frame) {
+			if (frame instanceof PingWebSocketFrame) {
+				ctx.writeAndFlush(new PongWebSocketFrame(frame.content().retain()), ctx.voidPromise());
+			} else if (frame instanceof PongWebSocketFrame) {
+				logger.info("Recieved pong from AudioConnect server");
+			} else if (frame instanceof CloseWebSocketFrame) {
+				CloseWebSocketFrame closeFrame = (CloseWebSocketFrame) frame;
+				logger.info("Recieved closing from AudioConnect server: [" + closeFrame.statusCode() + "] " + closeFrame.reasonText());
+				
+				connectedPlayers.clear();
+				offlinePlayers.clear();
+				ctx.close();
+			} else if (frame instanceof TextWebSocketFrame) {
+				TextWebSocketFrame textFrame = (TextWebSocketFrame) frame;
+				
+				Message[] messages;
+				try {
+					messages = messenger.deserialize(textFrame.text());
+				} catch (MessageParseException e) {
+					logger.warning("Failed to parse Message recieved from AudioConnect server: " + e.getMessage());
+					return;
+				}
+				
+				for (Message message : messages) {
+					handleMessage(ctx, message);
+				}
+			} else {
+				logger.warning("Recieved unexpected websocket frame from AudioConnect server: " + frame);
+			}
+		}
+		
+		private void handleMessage(final ChannelHandlerContext ctx, Message message) {
+			if (message instanceof AudioListMessage) {
+				AudioListMessage audioListMessage = (AudioListMessage) message;
+				switch (audioListMessage.getAction()) {
+					case ADD: {
+						audioList.addAll(audioListMessage.getAudioIds());
+						break;
+					}
+					case REMOVE: {
+						audioList.removeAll(audioListMessage.getAudioIds());
+						break;
+					}
+				}
+			} else if (message instanceof StatusMessage) {
+				StatusMessage statusMessage = (StatusMessage) message;
+				
+				if (statusMessage.getStatus() == Status.CONNECTED) {
+					final UUID playerId = statusMessage.getId();
+					connectedPlayers.put(playerId, new ConnectedPlayer(playerId, System.currentTimeMillis()));
+					
+					// Handle connected player on main thread
+					Bukkit.getScheduler().runTask(plugin, new Runnable() {
+						
+						@Override
+						public void run() {
+							OfflinePlayer player = Bukkit.getOfflinePlayer(playerId);
+							if (player.isOnline()) {
+								scheduler.addPlayer(playerId);
+								
+								writeAndFlush(ctx.channel(), createInitialPayload((Player) player));
+								
+								Bukkit.getPluginManager().callEvent(new PlayerAudioStatusEvent(player, Status.CONNECTED));
+							} else {
+								offlinePlayers.add(playerId);
+								
+								StatusMessage statusMessage = new StatusMessage(playerId, Status.DISCONNECTED);
+								writeAndFlush(ctx.channel(), statusMessage);
+							}
+						}
+						
+					});
+				} else if (statusMessage.getStatus() == Status.DISCONNECTED) {
+					final UUID playerId = statusMessage.getId();
+					connectedPlayers.remove(playerId);
+					offlinePlayers.remove(playerId);
+					
+					// Handle disconnected player on main thread
+					Bukkit.getScheduler().runTask(plugin, new Runnable() {
+						
+						@Override
+						public void run() {
+							if (scheduler.removePlayer(playerId)) {
+								Event statusEvent = new PlayerAudioStatusEvent(Bukkit.getOfflinePlayer(playerId), Status.DISCONNECTED);
+								Bukkit.getPluginManager().callEvent(statusEvent);
+							}
+						}
+					});
+				}
+			} else if (message instanceof HeartbeatMessage) {
+				// If for some reason the server doesn't receive the pong frame, it will send a heartbeat message
+				writeAndFlush(ctx.channel(), message);
+			} else {
+				logger.warning("Recieved unexpected Message type from AudioConnect server '" + message.getType() + "'");
+			}
+		}
+		
 	}
 	
 	
-	public static class TrackingInfo {
+	public static class ConnectedPlayer {
 		
 		private final UUID playerId;
 		private final long timeConnected;
 		
-		private TrackingInfo(UUID playerId, long timeConnected) {
+		private ConnectedPlayer(UUID playerId, long timeConnected) {
 			this.playerId = playerId;
 			this.timeConnected = timeConnected;
 		}
@@ -488,6 +546,12 @@ public class AudioConnectClient {
 		public long getTimeConnected() {
 			return timeConnected;
 		}
+		
+	}
+	
+	public static interface PlayerAudioDataWriter extends PlayerDataWriter {
+		
+		void writeAudioMessages(Player player, List<Message> messageBuffer);
 		
 	}
 	

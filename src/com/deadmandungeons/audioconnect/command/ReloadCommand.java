@@ -1,15 +1,12 @@
 package com.deadmandungeons.audioconnect.command;
 
-import java.util.UUID;
-
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
+
+import com.deadmandungeons.audioconnect.AudioConnect;
 import com.deadmandungeons.deadmanplugin.command.Arguments;
 import com.deadmandungeons.deadmanplugin.command.Command;
 import com.deadmandungeons.deadmanplugin.command.CommandInfo;
-
-import com.deadmandungeons.audioconnect.AudioConnect;
-import com.deadmandungeons.audioconnect.AudioConnect.Config;
 
 //@formatter:off
 @CommandInfo(
@@ -42,14 +39,11 @@ public class ReloadCommand implements Command {
 			public void run() {
 				plugin.getClient().disconnect();
 				
-				UUID userId = Config.getConnectionUserId();
-				if (userId == null) {
-					String property = Config.CONNECTION_USER_ID.getPath();
-					plugin.getLogger().severe("The required" + property + " config property is missing or invalid! Client cannot be started...");
+				if (!plugin.getConfiguration().validate()) {
 					return;
 				}
 				
-				plugin.getClient().connect(userId);
+				plugin.getClient().connect();
 			}
 		});
 	}

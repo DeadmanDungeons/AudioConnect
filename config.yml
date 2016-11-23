@@ -39,3 +39,23 @@ options:
   command-cooldown: 5
   # The frequency (in seconds) of audio connect announcement with connection URL for non-connected players. -1 for no announcements
   announce-frequency: 2700
+
+audio-tracks:
+# <track-name>
+#   default: <true|false>
+#   repeating: <true|false>
+#   random: <true|false>
+#   fading: <true|false>
+  primary:
+    default: true
+    repeating: true
+    random: true
+    fading: true
+  background:
+    repeating: true
+    random: true
+    fading: false
+  complementary:
+    repeating: false
+    random: false
+    fading: false

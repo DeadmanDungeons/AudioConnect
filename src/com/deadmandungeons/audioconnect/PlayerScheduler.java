@@ -14,19 +14,19 @@ import org.bukkit.scheduler.BukkitTask;
 public class PlayerScheduler {
 	
 	private final Plugin plugin;
-	private final PlayerTaskHandler handler;
+	private final PlayerDataWriter writer;
 	private final int tickFrequency;
 	private final int maxSchedulers;
 	private final Set<PlayerTask> playerTasks;
 	
 	private final Set<PlayerTask> startingTasks = new HashSet<>();
 	
-	public PlayerScheduler(Plugin plugin, PlayerTaskHandler handler, int tickFrequency, int maxSchedulers) {
+	public PlayerScheduler(Plugin plugin, PlayerDataWriter writer, int tickFrequency, int maxSchedulers) {
 		if (maxSchedulers <= 0 || maxSchedulers > tickFrequency) {
 			throw new IllegalArgumentException("maxSchedulers cannot be less than 1 or more than tickFrequency");
 		}
 		this.plugin = plugin;
-		this.handler = handler;
+		this.writer = writer;
 		this.tickFrequency = tickFrequency;
 		this.maxSchedulers = maxSchedulers;
 		playerTasks = new LinkedHashSet<>(maxSchedulers);
@@ -100,11 +100,14 @@ public class PlayerScheduler {
 				UUID playerId = iter.next();
 				Player player = Bukkit.getPlayer(playerId);
 				if (player != null) {
-					handler.handle(player);
+					writer.writeData(player);
 				} else {
 					iter.remove();
 					checkCancel();
 				}
+			}
+			if (playerIds.size() > 0) {
+				writer.flushData();
 			}
 		}
 		
@@ -138,9 +141,11 @@ public class PlayerScheduler {
 	}
 	
 	
-	public static interface PlayerTaskHandler {
+	public static interface PlayerDataWriter {
 		
-		void handle(Player player);
+		void writeData(Player player);
+		
+		void flushData();
 		
 	}
 	
