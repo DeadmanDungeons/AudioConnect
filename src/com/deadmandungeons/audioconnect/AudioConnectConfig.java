@@ -10,7 +10,11 @@ public interface AudioConnectConfig {
 	
 	UUID getConnectionUserId();
 	
-	URI getConnectionEndpointUri();
+	String getConnectionUserPassword();
+	
+	String getConnectionServerId();
+	
+	URI getConnectionUri();
 	
 	String getConnectionHost();
 	

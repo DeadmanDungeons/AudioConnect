@@ -16,7 +16,6 @@ import java.util.logging.Logger;
 
 import javax.net.ssl.SSLException;
 
-import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
@@ -69,7 +68,6 @@ import io.netty.util.AttributeKey;
 
 public class AudioConnectClient {
 	
-	private static final AttributeKey<String> CONNECTION_SUPPLIER_ID = AttributeKey.valueOf("connection-supplier-id");
 	private static final AttributeKey<Boolean> CONNECTION_REFUSED = AttributeKey.valueOf("connection-refused");
 	
 	private final Plugin plugin;
@@ -106,10 +104,6 @@ public class AudioConnectClient {
 		return connection != null && connection.handler.connectedPlayers.containsKey(playerId);
 	}
 	
-	public synchronized String getSupplierId() {
-		return (connection != null ? connection.channel.attr(CONNECTION_SUPPLIER_ID).get() : null);
-	}
-	
 	public synchronized Set<ConnectedPlayer> getConnectedPlayers() {
 		Set<ConnectedPlayer> connectedPlayers = new HashSet<>();
 		if (connection != null) {
@@ -125,8 +119,8 @@ public class AudioConnectClient {
 	 * @return the URL to the AudioConnect client for the given player or <code>null</code> if {@link #isConnected()} returns false
 	 */
 	public synchronized String getPlayerConnectUrl(UUID playerId) {
-		String supplierId = getSupplierId();
-		if (supplierId != null) {
+		if (isConnected()) {
+			String supplierId = config.getConnectionServerId();
 			String encodedPlayerId = ConnectUtils.encodeUuidBase64(playerId);
 			String protocol = (config.isConnectionSecure() ? "https" : "http");
 			String host = config.getConnectionHost();
@@ -169,13 +163,10 @@ public class AudioConnectClient {
 	}
 	
 	public synchronized void connect() {
-		URI uri = config.getConnectionEndpointUri();
-		UUID userId = config.getConnectionUserId();
-		
-		connect(uri, userId, false);
+		connect(config.getConnectionUri(), false);
 	}
 	
-	private void connect(final URI uri, final UUID userId, boolean reconnectAttempt) {
+	private void connect(final URI uri, boolean reconnectAttempt) {
 		if (connection != null) {
 			throw new IllegalStateException("already connected");
 		}
@@ -195,7 +186,7 @@ public class AudioConnectClient {
 			}
 		}
 		
-		connection = createConnection(uri, userId, sslContext);
+		connection = createConnection(uri, sslContext);
 		
 		connection.channel.closeFuture().addListener(new ChannelFutureListener() {
 			
@@ -236,7 +227,7 @@ public class AudioConnectClient {
 							synchronized (AudioConnectClient.this) {
 								reconnectAttempts.incrementAndGet();
 								shutdown();
-								connect(uri, userId, true);
+								connect(uri, true);
 							}
 						}
 					}, delay, TimeUnit.MILLISECONDS);
@@ -250,11 +241,10 @@ public class AudioConnectClient {
 	}
 	
 	private void shutdown() {
-		Connection connection = this.connection;
 		if (connection != null) {
-			this.connection = null;
 			connection.group.shutdownGracefully();
 			clearPlayers();
+			connection = null;
 		}
 	}
 	
@@ -264,9 +254,11 @@ public class AudioConnectClient {
 		scheduler.clear();
 	}
 	
-	private Connection createConnection(URI uri, UUID userId, final SslContext sslContext) {
+	private Connection createConnection(URI uri, final SslContext sslContext) {
 		DefaultHttpHeaders headers = new DefaultHttpHeaders();
-		headers.add(Messenger.USER_ID_HEADER, userId.toString());
+		headers.add(Messenger.USER_ID_HEADER, config.getConnectionUserId().toString());
+		headers.add(Messenger.USER_PASSWORD_HEADER, config.getConnectionUserPassword());
+		headers.add(Messenger.SUPPLIER_ID_HEADER, config.getConnectionServerId());
 		
 		// Connect with V13 (RFC 6455 aka HyBi-17)
 		WebSocketClientHandshaker handshaker = WebSocketClientHandshakerFactory.newHandshaker(uri, WebSocketVersion.V13, null, false, headers);
@@ -405,20 +397,14 @@ public class AudioConnectClient {
 		
 		private void handleHandshakeResponse(ChannelHandlerContext ctx, FullHttpResponse response) {
 			if (response.getStatus().equals(HttpResponseStatus.SWITCHING_PROTOCOLS)) {
-				String supplierId = response.headers().get(Messenger.SUPPLIER_ID_HEADER);
-				if (!StringUtils.isEmpty(supplierId)) {
-					try {
-						handshaker.finishHandshake(ctx.channel(), response);
-						
-						ctx.channel().attr(CONNECTION_SUPPLIER_ID).set(supplierId);
-						logger.info("Successfully connected to AudioConnect server!");
-						return;
-					} catch (Exception e) {
-						String responseMsg = response.content().toString(StandardCharsets.UTF_8);
-						logger.severe("Failed to Connect with AudioConnect server: " + responseMsg);
-					}
-				} else {
-					logger.severe("Websocket handshake response from AudioConnect server is missing " + Messenger.SUPPLIER_ID_HEADER + " header!");
+				try {
+					handshaker.finishHandshake(ctx.channel(), response);
+					
+					logger.info("Successfully connected to AudioConnect server!");
+					return;
+				} catch (Exception e) {
+					String responseMsg = response.content().toString(StandardCharsets.UTF_8);
+					logger.severe("Failed to Connect with AudioConnect server: " + responseMsg);
 				}
 			} else {
 				String responseMsg = response.content().toString(StandardCharsets.UTF_8);

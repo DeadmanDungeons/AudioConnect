@@ -1,6 +1,6 @@
 name: AudioConnect
 main: com.deadmandungeons.audioconnect.AudioConnect
-version: 1.1.0
+version: 1.1.1
 author: Weasel_Squeezer
 website: http://www.deadmandungeons.com
 
@@ -40,6 +40,12 @@ permissions:
             audioconnect.admin.reload: true
             audioconnect.admin.list: true
             audioconnect.admin.send: true
+    audioconnect.admin.reload:
+        description: Gives access to reload this plugin and reconnect
+    audioconnect.admin.list:
+        description: Gives access to list the connected players and available audio
+    audioconnect.admin.send:
+        description: Gives access to send and play audio to a connected player
     audioconnect.user.*:
         default: true
         description: Gives access to all AudioConnect user permissions
@@ -50,3 +56,5 @@ permissions:
         description: Gives access to all AudioConnect user permissions
         children:
             audioconnect.user.connect: true
+    audioconnect.user.connect:
+        description: Gives access to retrieve connection URL

@@ -5,17 +5,28 @@
 #                                                              #
 # ------------------------------------------------------------ #
 
-connection:
-  # The user-id (UUID/Username) of the AudioConnect account to connect with
-  # (usually the player UUID/Username of the server owner)
-  user-id: ''
+# NOTICE:
+#  For more information and a step-by-step guide on how to set up
+#  and configure AudioConnect, refer to the quick and easy tutorial
+#  here (https://youtube.com/watch?v=)
 
-  # Note: These values will most likely never need to be changed and probably shouln't (depending on use case)
+connection:
+  # The user-id of your AudioConnect account (Minecraft UUID/Username)
+  user-id: ''
+  
+  # The password of your AudioConnect account (Chosen when creating an account)
+  user-password: ''
+  
+  # The ID for this server as defined when adding this server to your AudioConnect account
+  server-id: ''
+
+  # NOTICE: These values will most likely never need to be changed and probably shouln't (depending on use case)
   endpoint:
     # The host of the AudioConnect webserver endpoint
     host: deadmandungeons.com
     # The port of the AudioConnect webserver endpoint
     port: 3030
+    # WARNING: If this is false, your user credentials will be transmitted in plain text
     # The boolean flag indicating whether to use an SSL (secure) connection with the AudioConnect webserver endpoint
     # If true (websocket protocol = wss, web protocol = https). If false: (websocket protocol = ws, web protocol = http)
     secure: true
@@ -26,12 +37,12 @@ connection:
 reconnect:
   # The number of miliseconds to delay before attempting to reconnect
   interval: 3000
-  # The maximum number of milliseconds to delay a reconnection attempt
+  # The maximum number of milliseconds to delay a reconnect attempt
   max-interval: 30000
   # The rate of increase of the reconnect delay. Allows reconnect attempts to back off when problems persist
   delay: 1.5
-  # The maximum number of reconnection attempts that will be made before giving up. 
-  # If -1, reconnection attempts will continue to be made forever.
+  # The maximum number of reconnect attempts that will be made before giving up. 
+  # If -1, reconnect attempts will continue to be made forever.
   max-attempts: -1
 
 options:
@@ -40,12 +51,8 @@ options:
   # The frequency (in seconds) of audio connect announcement with connection URL for non-connected players. -1 for no announcements
   announce-frequency: 2700
 
+# Define audio tracks and their settings to allow different audio types to be played independently from each other.
 audio-tracks:
-# <track-name>
-#   default: <true|false>
-#   repeating: <true|false>
-#   random: <true|false>
-#   fading: <true|false>
   primary:
     default: true
     repeating: true
@@ -59,3 +66,8 @@ audio-tracks:
     repeating: false
     random: false
     fading: false
+# <track-name>
+#   default: <true|false>
+#   repeating: <true|false>
+#   random: <true|false>
+#   fading: <true|false>

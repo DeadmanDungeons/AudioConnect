@@ -51,6 +51,7 @@ import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 
 public final class AudioConnect extends DeadmanPlugin implements Listener {
 	
+	private static final String SPIGOT_USER_ID = "%%__USER__%%"; // Injected by spigot repository on download
 	private static final String TRACKING_METADATA = "audio-tracking-data";
 	private static final String GLOBAL_REGION_ID = "__global__";
 	private static final int REGION_CHECK_DELAY = 3000;
@@ -340,6 +341,8 @@ public final class AudioConnect extends DeadmanPlugin implements Listener {
 		}
 		
 		private final ConfigEntry<String> connectionUserId = entry(String.class, "connection.user-id");
+		private final ConfigEntry<String> connectionUserPassword = entry(String.class, "connection.user-password");
+		private final ConfigEntry<String> connectionServerId = entry(String.class, "connection.server-id");
 		private final ConfigEntry<String> connectionHost = entry(String.class, "connection.endpoint.host");
 		private final ConfigEntry<Number> connectionPort = entry(Number.class, "connection.endpoint.port");
 		private final ConfigEntry<Boolean> connectionSecure = entry(Boolean.class, "connection.endpoint.secure");
@@ -353,27 +356,32 @@ public final class AudioConnect extends DeadmanPlugin implements Listener {
 		
 		
 		private UUID userId;
-		private URI endpointUri;
+		private URI connectionUri;
 		
 		@Override
 		public void loadEntries(DeadmanPlugin plugin) throws IllegalStateException {
 			super.loadEntries(plugin);
 			userId = null;
-			endpointUri = null;
+			connectionUri = null;
 		}
 		
 		
 		@Override
 		public boolean validate() {
-			UUID userId = getConnectionUserId();
-			if (userId == null) {
-				String property = connectionUserId.getPath();
-				getInstance().getLogger().severe(String.format(INVALID_REQUIRED_PROPERTY, property));
+			if (getConnectionUserId() == null) {
+				getInstance().getLogger().severe(String.format(INVALID_REQUIRED_PROPERTY, connectionUserId.getPath()));
+				return false;
+			}
+			if (StringUtils.isEmpty(connectionUserPassword.value())) {
+				getInstance().getLogger().severe(String.format(INVALID_REQUIRED_PROPERTY, connectionUserPassword.getPath()));
+				return false;
+			}
+			if (StringUtils.isEmpty(connectionServerId.value())) {
+				getInstance().getLogger().severe(String.format(INVALID_REQUIRED_PROPERTY, connectionServerId.getPath()));
 				return false;
 			}
 			if (audioTracks.value().isEmpty()) {
-				String property = audioTracks.getPath();
-				getInstance().getLogger().severe(String.format(INVALID_REQUIRED_PROPERTY, property));
+				getInstance().getLogger().severe(String.format(INVALID_REQUIRED_PROPERTY, audioTracks.getPath()));
 				return false;
 			}
 			return true;
@@ -394,11 +402,21 @@ public final class AudioConnect extends DeadmanPlugin implements Listener {
 		}
 		
 		@Override
-		public URI getConnectionEndpointUri() {
-			if (endpointUri == null) {
-				endpointUri = createConnectionEndpointUri(connectionSecure, connectionHost, connectionPort);
+		public String getConnectionUserPassword() {
+			return connectionUserPassword.value();
+		}
+		
+		@Override
+		public String getConnectionServerId() {
+			return connectionServerId.value();
+		}
+		
+		@Override
+		public URI getConnectionUri() {
+			if (connectionUri == null) {
+				connectionUri = createConnectionUri(connectionSecure, connectionHost, connectionPort);
 			}
-			return endpointUri;
+			return connectionUri;
 		}
 		
 		@Override
@@ -451,7 +469,7 @@ public final class AudioConnect extends DeadmanPlugin implements Listener {
 			return audioTracks.value();
 		}
 		
-		private static URI createConnectionEndpointUri(ConfigEntry<Boolean> secure, ConfigEntry<String> host, ConfigEntry<Number> port) {
+		private static URI createConnectionUri(ConfigEntry<Boolean> secure, ConfigEntry<String> host, ConfigEntry<Number> port) {
 			try {
 				return createUri((secure.value() ? "wss" : "ws"), host.value(), port.value().intValue(), "/supplier");
 			} catch (URISyntaxException e1) {
