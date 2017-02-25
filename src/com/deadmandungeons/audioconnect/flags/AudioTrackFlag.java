@@ -52,7 +52,7 @@ public class AudioTrackFlag extends Flag<AudioTrack> {
 					String msg = plugin.getMessenger().getMessage("failed.invalid-audio-id", false, trackId, audioIdValidation.getFailReason());
 					throw new InvalidFlagFormat(msg);
 				}
-				if (plugin.getAudioList().isInitialized() && !plugin.getAudioList().isAudioIdValid(audioId)) {
+				if (!plugin.getAudioList().isEmpty() && !plugin.getAudioList().isAudioIdValid(audioId)) {
 					String reason = plugin.getMessenger().getMessage("failed.audio-not-uploaded", false);
 					String msg = plugin.getMessenger().getMessage("failed.invalid-audio-id", false, audioId, reason);
 					throw new InvalidFlagFormat(msg);

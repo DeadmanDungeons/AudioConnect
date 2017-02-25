@@ -1,8 +1,8 @@
 name: AudioConnect
 main: com.deadmandungeons.audioconnect.AudioConnect
-version: 1.1.1
+version: 1.2.0
 author: Weasel_Squeezer
-website: http://www.deadmandungeons.com
+website: https://minecraftaudio.com
 
 depend: [DeadmanPlugin, WorldGuard]
 
@@ -37,9 +37,12 @@ permissions:
         default: op
         description: Gives access to all AudioConnect setup permissions
         children:
+            audioconnect.admin.register: true
             audioconnect.admin.reload: true
             audioconnect.admin.list: true
             audioconnect.admin.send: true
+    audioconnect.admin.register:
+        description: Gives access to initiate the registration of the server with an AudioConnect account
     audioconnect.admin.reload:
         description: Gives access to reload this plugin and reconnect
     audioconnect.admin.list:
@@ -55,6 +58,9 @@ permissions:
         default: true
         description: Gives access to all AudioConnect user permissions
         children:
+            audioconnect.user.register: true
             audioconnect.user.connect: true
+    audioconnect.user.register:
+        description: Gives access to initiate the registration of an AudioConnect account
     audioconnect.user.connect:
         description: Gives access to retrieve connection URL

@@ -13,7 +13,7 @@ import com.deadmandungeons.deadmanplugin.command.CommandInfo;
 	name = "Reload",
 	permissions = {"audioconnect.admin.reload"},
 	inGameOnly = false,
-	description = "Reload this plugin from file"
+	description = "Reload plugin files and reconnect to AudioConnect server"
 )//@formatter:on
 public class ReloadCommand implements Command {
 	
@@ -37,7 +37,7 @@ public class ReloadCommand implements Command {
 			
 			@Override
 			public void run() {
-				plugin.getClient().disconnect();
+				plugin.getClient().disconnect().awaitUninterruptibly();
 				
 				if (!plugin.getConfiguration().validate()) {
 					return;

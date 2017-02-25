@@ -1,6 +1,7 @@
 package com.deadmandungeons.audioconnect.command;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Set;
 
@@ -9,7 +10,7 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 
 import com.deadmandungeons.audioconnect.AudioConnect;
-import com.deadmandungeons.audioconnect.AudioConnectClient.ConnectedPlayer;
+import com.deadmandungeons.audioconnect.AudioConnectClient.PlayerConnection;
 import com.deadmandungeons.deadmanplugin.DeadmanUtils;
 import com.deadmandungeons.deadmanplugin.command.ArgumentInfo;
 import com.deadmandungeons.deadmanplugin.command.ArgumentInfo.ArgType;
@@ -67,12 +68,12 @@ public class ListCommand implements Command {
 	
 	
 	private void listPlayers(CommandSender sender, int pageNum) {
-		Set<ConnectedPlayer> connectedPlayers = plugin.getClient().getConnectedPlayers();
-		ConnectedPlayer[] list = connectedPlayers.toArray(new ConnectedPlayer[connectedPlayers.size()]);
-		Arrays.sort(list, new Comparator<ConnectedPlayer>() {
+		Collection<PlayerConnection> connectedPlayers = plugin.getClient().getPlayerConnections();
+		PlayerConnection[] list = connectedPlayers.toArray(new PlayerConnection[connectedPlayers.size()]);
+		Arrays.sort(list, new Comparator<PlayerConnection>() {
 			// Sort players alphabetically. Players with a known username appear first.
 			@Override
-			public int compare(ConnectedPlayer a, ConnectedPlayer b) {
+			public int compare(PlayerConnection a, PlayerConnection b) {
 				String aName = a.getPlayer().getName(), bName = b.getPlayer().getName();
 				if (aName != null && bName != null) {
 					return aName.compareTo(bName);
@@ -115,7 +116,7 @@ public class ListCommand implements Command {
 		
 		for (int i = 0; i < list.length && i < (pageNum * itemsPerPage); i++) {
 			if (i >= (pageNum - 1) * itemsPerPage) {
-				long duration = System.currentTimeMillis() - list[i].getTimeConnected();
+				long duration = System.currentTimeMillis() - list[i].getConnectionTimestamp();
 				String connectedDuration = ChatColor.DARK_GRAY + " (" + DeadmanUtils.formatDuration(duration) + ")";
 				
 				OfflinePlayer connectedPlayer = list[i].getPlayer();

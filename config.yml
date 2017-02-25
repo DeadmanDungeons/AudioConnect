@@ -1,7 +1,7 @@
 # ----------------------- AudioConnect ----------------------- #
 #                                                              #
 #      Author: Weasel_Squeezer                                 #
-#      Website: deadmandungeons.com                            #
+#      Website: minecraftaudio.com                             #
 #                                                              #
 # ------------------------------------------------------------ #
 
@@ -13,23 +13,27 @@
 connection:
   # The user-id of your AudioConnect account (Minecraft UUID/Username)
   user-id: ''
-  
+
   # The password of your AudioConnect account (Chosen when creating an account)
   user-password: ''
-  
+
   # The ID for this server as defined when adding this server to your AudioConnect account
   server-id: ''
 
   # NOTICE: These values will most likely never need to be changed and probably shouln't (depending on use case)
   endpoint:
-    # The host of the AudioConnect webserver endpoint
-    host: deadmandungeons.com
-    # The port of the AudioConnect webserver endpoint
-    port: 3030
     # WARNING: If this is false, your user credentials will be transmitted in plain text
     # The boolean flag indicating whether to use an SSL (secure) connection with the AudioConnect webserver endpoint
     # If true (websocket protocol = wss, web protocol = https). If false: (websocket protocol = ws, web protocol = http)
     secure: true
+    # The host of the AudioConnect webserver
+    host: minecraftaudio.com
+    # The port of the AudioConnect websocket endpoint
+    websocket-port: 3030
+    # The port of the AudioConnect webapp endpoint
+    webapp-port: 80
+    # The path of the AudioConnect webapp endpoint
+    webapp-path: /
 
 # Configure settings for reconnecting to the AudioConnect server in the event of an unexpected disconnect.
 # If the reason for the disconnect was because the server refused the conneciton, or if the client was manually
@@ -40,7 +44,7 @@ reconnect:
   # The maximum number of milliseconds to delay a reconnect attempt
   max-interval: 30000
   # The rate of increase of the reconnect delay. Allows reconnect attempts to back off when problems persist
-  delay: 1.5
+  delay: 1.2
   # The maximum number of reconnect attempts that will be made before giving up. 
   # If -1, reconnect attempts will continue to be made forever.
   max-attempts: -1

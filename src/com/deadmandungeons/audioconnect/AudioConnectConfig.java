@@ -1,6 +1,7 @@
 package com.deadmandungeons.audioconnect;
 
 import java.net.URI;
+import java.net.URL;
 import java.util.Map;
 import java.util.UUID;
 
@@ -14,13 +15,19 @@ public interface AudioConnectConfig {
 	
 	String getConnectionServerId();
 	
-	URI getConnectionUri();
+	URI getConnectionWebsocketUri();
+	
+	URL getConnectionWebappUrl();
+	
+	boolean isConnectionSecure();
 	
 	String getConnectionHost();
 	
-	int getConnectionPort();
+	int getConnectionWebsocketPort();
 	
-	boolean isConnectionSecure();
+	int getConnectionWebappPort();
+	
+	String getConnectionWebappPath();
 	
 	int getReconnectInterval();
 	

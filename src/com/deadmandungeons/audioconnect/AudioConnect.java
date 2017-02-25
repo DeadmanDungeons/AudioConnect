@@ -1,7 +1,9 @@
 package com.deadmandungeons.audioconnect;
 
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -18,10 +20,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.metadata.FixedMetadataValue;
 
 import com.deadmandungeons.audioconnect.AudioConnectClient.PlayerAudioDataWriter;
@@ -49,22 +47,22 @@ import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 
 
-public final class AudioConnect extends DeadmanPlugin implements Listener {
+public final class AudioConnect extends DeadmanPlugin {
 	
-	private static final String SPIGOT_USER_ID = "%%__USER__%%"; // Injected by spigot repository on download
 	private static final String TRACKING_METADATA = "audio-tracking-data";
 	private static final String GLOBAL_REGION_ID = "__global__";
 	private static final int REGION_CHECK_DELAY = 3000;
 	
 	private final Config config = new Config();
-	private final AudioList audioList = new AudioList(this);
-	private final AudioConnectClient client = new AudioConnectClient(this, config, audioList, new PlayerAudioTracker());
+	private final AudioList audioList = new AudioList(getLogger());
 	
 	private final SetFlag<AudioTrack> audioFlag = new SetFlag<>("audio", new AudioTrackFlag(null));
 	private final AudioDelayFlag audioDelayFlag = new AudioDelayFlag("audio-delay");
 	
 	private Messenger messenger;
 	private WorldGuardPlugin worldGuard;
+	
+	private AudioConnectClient client;
 	
 	public static AudioConnect getInstance() {
 		return getDeadmanPlugin(AudioConnect.class);
@@ -85,42 +83,20 @@ public final class AudioConnect extends DeadmanPlugin implements Listener {
 	protected void onPluginEnable() {
 		setConfig(config);
 		
-		getServer().getPluginManager().registerEvents(this, this);
 		getCommand("ac").setExecutor(new CommandHandler(this, messenger, config.getCommandCooldown()));
 		
-		if (!config.validate()) {
-			return;
+		Bukkit.getScheduler().runTaskTimer(this, new ConnectAnouncement(), 0, config.getAnnounceFrequency() * 20);
+		
+		client = new AudioConnectClient(this, config, audioList, new PlayerAudioTracker());
+		
+		if (config.validate()) {
+			client.connect();
 		}
-		
-		Bukkit.getScheduler().runTaskTimer(this, new Runnable() {
-			
-			@Override
-			public void run() {
-				if (!client.isConnected()) {
-					return;
-				}
-				synchronized (client) {
-					for (Player player : Bukkit.getOnlinePlayers()) {
-						if (client.isConnected() && !client.isPlayerConnected(player.getUniqueId())) {
-							String announcement = getMessenger().getMessage("misc.announcement", true);
-							String connectUrl = client.getPlayerConnectUrl(player.getUniqueId());
-							String connectDetails = getMessenger().getMessage("misc.connect-details", true, connectUrl);
-							
-							getMessenger().sendMessage(player, "misc.top-bar");
-							player.sendMessage(announcement + connectDetails);
-							getMessenger().sendMessage(player, "misc.bottom-bar");
-						}
-					}
-				}
-			}
-		}, 0, config.getAnnounceFrequency() * 20);
-		
-		client.connect();
 	}
 	
 	@Override
 	protected void onPluginDisable() {
-		client.disconnect();
+		client.shutdown().awaitUninterruptibly();
 	}
 	
 	
@@ -140,17 +116,37 @@ public final class AudioConnect extends DeadmanPlugin implements Listener {
 		return messenger;
 	}
 	
-	
-	@EventHandler
-	private void onPlayerJoin(PlayerJoinEvent event) {
-		client.notifyPlayerJoin(event.getPlayer());
+	public String getPlayerConnectUrl(UUID playerId) {
+		String webappUrl = config.getConnectionWebappUrl().toString();
+		String serverId = config.getConnectionServerId();
+		String encodedPlayerId = ConnectUtils.encodeUuidBase64(playerId);
+		
+		return webappUrl + "/connect?sid=" + serverId + "&cid=" + encodedPlayerId;
 	}
 	
-	@EventHandler
-	private void onPlayerQuit(PlayerQuitEvent event) {
-		client.notifyPlayerQuit(event.getPlayer());
-	}
 	
+	private class ConnectAnouncement implements Runnable {
+		
+		@Override
+		public void run() {
+			if (!client.isConnected()) {
+				return;
+			}
+			
+			for (Player player : Bukkit.getOnlinePlayers()) {
+				if (!client.isPlayerConnected(player.getUniqueId())) {
+					String announcement = messenger.getMessage("misc.announcement", true);
+					String connectUrl = getPlayerConnectUrl(player.getUniqueId());
+					String connectDetails = messenger.getMessage("misc.connect-details", true, connectUrl);
+					
+					messenger.sendMessage(player, "misc.top-bar");
+					player.sendMessage(announcement + connectDetails);
+					messenger.sendMessage(player, "misc.bottom-bar");
+				}
+			}
+		}
+		
+	}
 	
 	private class PlayerAudioTracker implements PlayerAudioDataWriter {
 		
@@ -343,9 +339,11 @@ public final class AudioConnect extends DeadmanPlugin implements Listener {
 		private final ConfigEntry<String> connectionUserId = entry(String.class, "connection.user-id");
 		private final ConfigEntry<String> connectionUserPassword = entry(String.class, "connection.user-password");
 		private final ConfigEntry<String> connectionServerId = entry(String.class, "connection.server-id");
-		private final ConfigEntry<String> connectionHost = entry(String.class, "connection.endpoint.host");
-		private final ConfigEntry<Number> connectionPort = entry(Number.class, "connection.endpoint.port");
 		private final ConfigEntry<Boolean> connectionSecure = entry(Boolean.class, "connection.endpoint.secure");
+		private final ConfigEntry<String> connectionHost = entry(String.class, "connection.endpoint.host");
+		private final ConfigEntry<Number> connectionWebsocketPort = entry(Number.class, "connection.endpoint.websocket-port");
+		private final ConfigEntry<Number> connectionWebappPort = entry(Number.class, "connection.endpoint.webapp-port");
+		private final ConfigEntry<String> connectionWebappPath = entry(String.class, "connection.endpoint.webapp-path");
 		private final ConfigEntry<Number> reconnectInterval = entry(Number.class, "reconnect.interval");
 		private final ConfigEntry<Number> reconnectMaxInterval = entry(Number.class, "reconnect.max-interval");
 		private final ConfigEntry<Number> reconnectDelay = entry(Number.class, "reconnect.delay");
@@ -355,19 +353,20 @@ public final class AudioConnect extends DeadmanPlugin implements Listener {
 		private final MapConfigEntry<String, AudioTrackSettings> audioTracks = mapEntry(AudioTrackSettings.class, "audio-tracks");
 		
 		
-		private UUID userId;
-		private URI connectionUri;
+		private volatile UUID userId;
+		private volatile URI websocketUri;
+		private volatile URL webappUrl;
 		
 		@Override
-		public void loadEntries(DeadmanPlugin plugin) throws IllegalStateException {
+		public synchronized void loadEntries(DeadmanPlugin plugin) throws IllegalStateException {
 			super.loadEntries(plugin);
 			userId = null;
-			connectionUri = null;
+			websocketUri = null;
 		}
 		
 		
 		@Override
-		public boolean validate() {
+		public synchronized boolean validate() {
 			if (getConnectionUserId() == null) {
 				getInstance().getLogger().severe(String.format(INVALID_REQUIRED_PROPERTY, connectionUserId.getPath()));
 				return false;
@@ -388,7 +387,7 @@ public final class AudioConnect extends DeadmanPlugin implements Listener {
 		}
 		
 		@Override
-		public UUID getConnectionUserId() {
+		public synchronized UUID getConnectionUserId() {
 			if (userId == null) {
 				String userIdStr = connectionUserId.value();
 				if (!StringUtils.isEmpty(userIdStr)) {
@@ -402,74 +401,92 @@ public final class AudioConnect extends DeadmanPlugin implements Listener {
 		}
 		
 		@Override
-		public String getConnectionUserPassword() {
+		public synchronized String getConnectionUserPassword() {
 			return connectionUserPassword.value();
 		}
 		
 		@Override
-		public String getConnectionServerId() {
+		public synchronized String getConnectionServerId() {
 			return connectionServerId.value();
 		}
 		
 		@Override
-		public URI getConnectionUri() {
-			if (connectionUri == null) {
-				connectionUri = createConnectionUri(connectionSecure, connectionHost, connectionPort);
+		public synchronized URI getConnectionWebsocketUri() {
+			if (websocketUri == null) {
+				websocketUri = createWebsocketUri(connectionSecure, connectionHost, connectionWebsocketPort);
 			}
-			return connectionUri;
+			return websocketUri;
 		}
 		
 		@Override
-		public String getConnectionHost() {
-			return connectionHost.value();
+		public synchronized URL getConnectionWebappUrl() {
+			if (webappUrl == null) {
+				webappUrl = createWebappUrl(connectionSecure, connectionHost, connectionWebappPort, connectionWebappPath);
+			}
+			return webappUrl;
 		}
 		
 		@Override
-		public int getConnectionPort() {
-			return connectionPort.value().intValue();
-		}
-		
-		@Override
-		public boolean isConnectionSecure() {
+		public synchronized boolean isConnectionSecure() {
 			return connectionSecure.value();
 		}
 		
 		@Override
-		public int getReconnectInterval() {
+		public synchronized String getConnectionHost() {
+			return connectionHost.value();
+		}
+		
+		@Override
+		public synchronized int getConnectionWebsocketPort() {
+			return connectionWebsocketPort.value().intValue();
+		}
+		
+		@Override
+		public synchronized int getConnectionWebappPort() {
+			return connectionWebappPort.value().intValue();
+		}
+		
+		@Override
+		public synchronized String getConnectionWebappPath() {
+			return connectionWebappPath.value();
+		}
+		
+		@Override
+		public synchronized int getReconnectInterval() {
 			return reconnectInterval.value().intValue();
 		}
 		
 		@Override
-		public int getReconnectMaxInterval() {
+		public synchronized int getReconnectMaxInterval() {
 			return reconnectMaxInterval.value().intValue();
 		}
 		
 		@Override
-		public double getReconnectDelay() {
+		public synchronized double getReconnectDelay() {
 			return reconnectDelay.value().doubleValue();
 		}
 		
 		@Override
-		public int getReconnectMaxAttempts() {
+		public synchronized int getReconnectMaxAttempts() {
 			return reconnectMaxAttempts.value().intValue();
 		}
 		
 		@Override
-		public int getCommandCooldown() {
+		public synchronized int getCommandCooldown() {
 			return commandCooldown.value().intValue();
 		}
 		
 		@Override
-		public int getAnnounceFrequency() {
+		public synchronized int getAnnounceFrequency() {
 			return announceFrequency.value().intValue();
 		}
 		
 		@Override
-		public Map<String, AudioTrackSettings> getAudioTracks() {
+		public synchronized Map<String, AudioTrackSettings> getAudioTracks() {
 			return audioTracks.value();
 		}
 		
-		private static URI createConnectionUri(ConfigEntry<Boolean> secure, ConfigEntry<String> host, ConfigEntry<Number> port) {
+		private static URI createWebsocketUri(ConfigEntry<Boolean> secure, ConfigEntry<String> host, ConfigEntry<Number> port) {
 			try {
 				return createUri((secure.value() ? "wss" : "ws"), host.value(), port.value().intValue(), "/supplier");
 			} catch (URISyntaxException e1) {
@@ -480,6 +497,26 @@ public final class AudioConnect extends DeadmanPlugin implements Listener {
 				} catch (URISyntaxException e2) {
 					String paths = StringUtils.join(new String[] { secure.getPath(), host.getPath(), port.getPath() }, ", ");
 					throw new IllegalStateException("A URI for the config values at paths (" + paths + ") in the default configuration file "
+							+ "could not be created! The default configuration must contain valid values.", e2);
+				}
+			}
+		}
+		
+		private static URL createWebappUrl(ConfigEntry<Boolean> secure, ConfigEntry<String> host, ConfigEntry<Number> port,
+				ConfigEntry<String> path) {
+			try {
+				String validPath = path.value().replaceAll("^([^/])", "/$1").replaceAll("/$", "");
+				return createUri((secure.value() ? "https" : "http"), host.value(), port.value().intValue(), validPath).toURL();
+			} catch (MalformedURLException | URISyntaxException e1) {
+				try {
+					String validPath = path.defaultValue().replaceAll("^([^/])", "/$1").replaceAll("/$", "");
+					URL url = createUri((secure.defaultValue() ? "https" : "http"), host.defaultValue(), port.defaultValue().intValue(), validPath)
+							.toURL();
+					getInstance().getLogger().warning("Invalid host syntax at " + host.getPath() + " in config. Using default URL " + url);
+					return url;
+				} catch (MalformedURLException | URISyntaxException e2) {
+					String paths = StringUtils.join(new String[] { secure.getPath(), host.getPath(), port.getPath(), path.getPath() }, ", ");
+					throw new IllegalStateException("A URL for the config values at paths (" + paths + ") in the default configuration file "
 							+ "could not be created! The default configuration must contain valid values.", e2);
 				}
 			}

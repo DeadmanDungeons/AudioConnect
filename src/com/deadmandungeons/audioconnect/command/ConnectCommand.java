@@ -27,8 +27,7 @@ public class ConnectCommand implements Command {
 	}
 	
 	public boolean execute(Player player) {
-		String connectUrl = plugin.getClient().getPlayerConnectUrl(player.getUniqueId());
-		if (connectUrl == null) {
+		if (!plugin.getClient().isConnected()) {
 			plugin.getMessenger().sendErrorMessage(player, "failed.not-connected-server");
 			return false;
 		}
@@ -36,6 +35,8 @@ public class ConnectCommand implements Command {
 			plugin.getMessenger().sendErrorMessage(player, "failed.already-connected");
 			return false;
 		}
+		
+		String connectUrl = plugin.getPlayerConnectUrl(player.getUniqueId());
 		
 		plugin.getMessenger().sendMessage(player, "misc.top-bar");
 		plugin.getMessenger().sendImportantMessage(player, "misc.connect-details", connectUrl);

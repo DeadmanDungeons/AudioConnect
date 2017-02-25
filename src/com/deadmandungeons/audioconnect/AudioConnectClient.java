@@ -3,13 +3,14 @@ package com.deadmandungeons.audioconnect;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -18,8 +19,13 @@ import javax.net.ssl.SSLException;
 
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.Plugin;
 
 import com.deadmandungeons.audioconnect.AudioConnectConfig.AudioTrackSettings;
@@ -27,14 +33,12 @@ import com.deadmandungeons.audioconnect.PlayerScheduler.PlayerDataWriter;
 import com.deadmandungeons.audioconnect.messages.AudioListMessage;
 import com.deadmandungeons.audioconnect.messages.AudioMessage;
 import com.deadmandungeons.audioconnect.messages.AudioTrackMessage;
-import com.deadmandungeons.connect.commons.ConnectUtils;
 import com.deadmandungeons.connect.commons.HeartbeatMessage;
 import com.deadmandungeons.connect.commons.Messenger;
 import com.deadmandungeons.connect.commons.Messenger.Message;
 import com.deadmandungeons.connect.commons.Messenger.MessageParseException;
 import com.deadmandungeons.connect.commons.StatusMessage;
 import com.deadmandungeons.connect.commons.StatusMessage.Status;
-import com.google.common.collect.Sets;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
@@ -44,7 +48,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
-import io.netty.channel.EventLoopGroup;
+import io.netty.channel.ChannelPromise;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
@@ -64,305 +68,408 @@ import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketVersion;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
-import io.netty.util.AttributeKey;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.FutureListener;
+import io.netty.util.concurrent.GlobalEventExecutor;
+import io.netty.util.concurrent.Promise;
 
+/**
+ * The class which operates as the data supplier client to an AudioConnect server.<br>
+ * <b>Note:</b> All public operations are thread safe.
+ * @author Jon
+ */
 public class AudioConnectClient {
 	
-	private static final AttributeKey<Boolean> CONNECTION_REFUSED = AttributeKey.valueOf("connection-refused");
+	private static final int WEBSOCKET_CLOSE_CODE_GOING_AWAY = 1001;
 	
 	private final Plugin plugin;
+	
+	// objects accessed on main server thread only
+	private final PlayerStatusListener playerStatusListener = new PlayerStatusListener();
+	private final PlayerAudioDataWriter playerDataWriter;
+	private final PlayerScheduler playerScheduler; // thread safe but best used on main thread
+	
+	// thread safe objects accessed on multiple threads
 	private final AudioConnectConfig config;
 	private final AudioList audioList;
-	private final PlayerAudioDataWriter dataWriter;
-	
-	private final PlayerScheduler scheduler; // only accessed on main MC thread
 	private final Messenger messenger;
 	private final Logger logger;
 	
+	private final Bootstrap bootstrap = new Bootstrap();
+	private final ChannelFutureListener channelCloseListener = new ConnectionCloseListener();
 	private final AtomicInteger reconnectAttempts = new AtomicInteger();
+	private final AtomicBoolean connecting = new AtomicBoolean(); // Guard against connect() re-entrance
+	private final Object connectionLock = new Object();
+	
 	private volatile Connection connection;
 	
-	public AudioConnectClient(Plugin plugin, AudioConnectConfig config, AudioList audioList, PlayerAudioDataWriter dataWriter) {
+	
+	public AudioConnectClient(Plugin plugin, AudioConnectConfig config, AudioList audioList, PlayerAudioDataWriter playerDataWriter) {
 		this.plugin = plugin;
 		this.config = config;
 		this.audioList = audioList;
-		this.dataWriter = dataWriter;
+		this.playerDataWriter = playerDataWriter;
 		
-		// execute every 20 ticks (1 second) with max of 5 displaced scheduler tasks
-		scheduler = new PlayerScheduler(plugin, dataWriter, 20, 5);
+		// execute every 20 ticks (1 second) with max of 20 displaced scheduler tasks
+		playerScheduler = new PlayerScheduler(plugin, playerDataWriter, 20, 20);
 		messenger = Messenger.builder().registerMessageType(AudioMessage.CREATOR).registerMessageType(AudioListMessage.CREATOR)
 				.registerMessageType(AudioTrackMessage.CREATOR).build();
 		logger = plugin.getLogger();
-	}
-	
-	
-	public synchronized boolean isConnected() {
-		return connection != null;
-	}
-	
-	public synchronized boolean isPlayerConnected(UUID playerId) {
-		return connection != null && connection.handler.connectedPlayers.containsKey(playerId);
-	}
-	
-	public synchronized Set<ConnectedPlayer> getConnectedPlayers() {
-		Set<ConnectedPlayer> connectedPlayers = new HashSet<>();
-		if (connection != null) {
-			for (ConnectedPlayer connectedPlayer : connection.handler.connectedPlayers.values()) {
-				connectedPlayers.add(connectedPlayer);
-			}
-		}
-		return connectedPlayers;
-	}
-	
-	/**
-	 * @param playerId - The unique ID of the player to include as the tracked player in the returned connect URL
-	 * @return the URL to the AudioConnect client for the given player or <code>null</code> if {@link #isConnected()} returns false
-	 */
-	public synchronized String getPlayerConnectUrl(UUID playerId) {
-		if (isConnected()) {
-			String supplierId = config.getConnectionServerId();
-			String encodedPlayerId = ConnectUtils.encodeUuidBase64(playerId);
-			String protocol = (config.isConnectionSecure() ? "https" : "http");
-			String host = config.getConnectionHost();
-			String path = "/audio-connect/connect";
-			String query = "?sid=" + supplierId + "&cid=" + encodedPlayerId;
-			
-			return protocol + "://" + host + path + query;
-		}
-		return null;
-	}
-	
-	public synchronized void notifyPlayerJoin(Player player) {
-		UUID playerId = player.getUniqueId();
-		if (connection != null && connection.handler.offlinePlayers.remove(playerId)) {
-			scheduler.addPlayer(playerId);
-			
-			writeAndFlush(createInitialPayload(player));
-			
-			Bukkit.getPluginManager().callEvent(new PlayerAudioStatusEvent(player, Status.CONNECTED));
-		}
-	}
-	
-	public synchronized void notifyPlayerQuit(Player player) {
-		UUID playerId = player.getUniqueId();
-		if (isPlayerConnected(playerId) && connection.handler.offlinePlayers.add(playerId)) {
-			Status status = Status.DISCONNECTED;
-			writeAndFlush(new StatusMessage(playerId, status));
-			scheduler.removePlayer(playerId);
-			
-			Bukkit.getPluginManager().callEvent(new PlayerAudioStatusEvent(player, status));
-		}
-	}
-	
-	public synchronized void writeAndFlush(Message... messages) {
-		if (connection == null) {
-			throw new IllegalStateException("not connected to AudioConnect server");
-		}
 		
-		writeAndFlush(connection.channel, messages);
-	}
-	
-	public synchronized void connect() {
-		connect(config.getConnectionUri(), false);
-	}
-	
-	private void connect(final URI uri, boolean reconnectAttempt) {
-		if (connection != null) {
-			throw new IllegalStateException("already connected");
-		}
-		if (!reconnectAttempt) {
-			reconnectAttempts.set(0);
-		}
-		
-		logger.info("Connecting to AudioConnect server [" + uri + "] ...");
-		
-		SslContext sslContext = null;
-		if (config.isConnectionSecure()) {
-			try {
-				sslContext = SslContext.newClientContext(InsecureTrustManagerFactory.INSTANCE);
-			} catch (SSLException e) {
-				logger.log(Level.SEVERE, "Shutting down client event loop due to unexpected failure to create SSL context", e);
-				return;
-			}
-		}
-		
-		connection = createConnection(uri, sslContext);
-		
-		connection.channel.closeFuture().addListener(new ChannelFutureListener() {
-			
-			@Override
-			public void operationComplete(ChannelFuture future) {
-				synchronized (AudioConnectClient.this) {
-					if (connection == null) {
-						return;
-					}
-					Boolean connectionWasRefused = connection.channel.attr(CONNECTION_REFUSED).get();
-					if (connectionWasRefused != null && connectionWasRefused) {
-						logger.info("Shutting down client event loop due to unexpected errors while connecting with AudioConnect server");
-						shutdown();
-						return;
-					}
-					int maxReconnectAttempts = config.getReconnectMaxAttempts();
-					if (maxReconnectAttempts > 0 && reconnectAttempts.get() >= maxReconnectAttempts) {
-						logger.info("The maximum amount of reconnect attempts have been made. Shutting down client event loop");
-						shutdown();
-						return;
-					}
-					
-					clearPlayers();
-					connection = null;
-					
-					int interval = config.getReconnectInterval();
-					double delayRate = config.getReconnectDelay();
-					int delay = (int) (interval * Math.pow(delayRate, reconnectAttempts.get()));
-					int maxInterval = config.getReconnectMaxInterval();
-					if (delay > maxInterval) {
-						delay = maxInterval;
-					}
-					logger.warning("Disconnected from AudioConnect server. Reattempting connection in " + (delay / 1000) + " seconds");
-					future.channel().eventLoop().schedule(new Runnable() {
-						
-						@Override
-						public void run() {
-							synchronized (AudioConnectClient.this) {
-								reconnectAttempts.incrementAndGet();
-								shutdown();
-								connect(uri, true);
-							}
-						}
-					}, delay, TimeUnit.MILLISECONDS);
-				}
-			}
-		});
-	}
-	
-	public synchronized void disconnect() {
-		shutdown();
-	}
-	
-	private void shutdown() {
-		if (connection != null) {
-			connection.group.shutdownGracefully();
-			clearPlayers();
-			connection = null;
-		}
-	}
-	
-	private void clearPlayers() {
-		connection.handler.connectedPlayers.clear();
-		connection.handler.offlinePlayers.clear();
-		scheduler.clear();
-	}
-	
-	private Connection createConnection(URI uri, final SslContext sslContext) {
-		DefaultHttpHeaders headers = new DefaultHttpHeaders();
-		headers.add(Messenger.USER_ID_HEADER, config.getConnectionUserId().toString());
-		headers.add(Messenger.USER_PASSWORD_HEADER, config.getConnectionUserPassword());
-		headers.add(Messenger.SUPPLIER_ID_HEADER, config.getConnectionServerId());
-		
-		// Connect with V13 (RFC 6455 aka HyBi-17)
-		WebSocketClientHandshaker handshaker = WebSocketClientHandshakerFactory.newHandshaker(uri, WebSocketVersion.V13, null, false, headers);
-		final AudioConnectClientHandler handler = new AudioConnectClientHandler(handshaker);
-		
-		EventLoopGroup group = new NioEventLoopGroup();
-		Bootstrap bootstrap = new Bootstrap();
-		bootstrap.group(group);
+		bootstrap.group(new NioEventLoopGroup());
 		bootstrap.channel(NioSocketChannel.class);
+		bootstrap.handler(new ConnectionChannelIntializer());
 		
 		// Used to handle the buffer limits for when network latency causes an increasing write buffer size.
 		// In the case of an overflow, an OutOfMemoryError would normally occur, but this client will instead
-		// drop messages and warn the logs that the channel is not writable due to the buffer limit.
+		// drop non-critical messages and warn the logs that the channel is not writable due to the buffer limit.
 		bootstrap.option(ChannelOption.WRITE_BUFFER_HIGH_WATER_MARK, 32 * 1024);
 		bootstrap.option(ChannelOption.WRITE_BUFFER_LOW_WATER_MARK, 8 * 1024);
-		
-		bootstrap.handler(new ChannelInitializer<SocketChannel>() {
-			
-			@Override
-			protected void initChannel(SocketChannel channel) {
-				ChannelPipeline pipeline = channel.pipeline();
-				if (sslContext != null) {
-					pipeline.addLast(sslContext.newHandler(channel.alloc()));
-				}
-				pipeline.addLast(new HttpClientCodec());
-				pipeline.addLast(new HttpObjectAggregator(8192));
-				pipeline.addLast(handler);
-			}
-		});
-		
-		ChannelFuture connectFuture = bootstrap.connect(uri.getHost(), uri.getPort());
-		Channel channel = connectFuture.channel();
-		final Connection connection = new Connection(handler, group, channel);
-		connectFuture.addListener(new ChannelFutureListener() {
-			
-			@Override
-			public void operationComplete(ChannelFuture future) throws Exception {
-				if (future.isSuccess()) {
-					reconnectAttempts.set(0);
-				}
-			}
-		});
-		return connection;
 	}
 	
-	private void writeAndFlush(Channel channel, Message... messages) {
-		if (!channel.isWritable()) {
-			logger.warning("Attempted to write message to AudioConnect server but the channel is not writable! "
-					+ "This may be a sign of a slow network connection or a slow server");
-			return;
+	
+	/**
+	 * @return <code>true</code> if this client is fully connected to the AudioConnect server
+	 */
+	public boolean isConnected() {
+		Connection connection = this.connection;
+		return connection != null && connection.handshakeFuture.isSuccess();
+	}
+	
+	/**
+	 * @param playerId - The UUID of the player to check
+	 * @return <code>true</code> if a player identified with the given playerId is connected to the web client endpoint
+	 */
+	public boolean isPlayerConnected(UUID playerId) {
+		Connection connection = this.connection;
+		return connection != null && connection.playerConnections.containsKey(playerId);
+	}
+	
+	/**
+	 * @return an unmodifiable thread safe collection of {@link PlayerConnection}'s
+	 */
+	public Collection<PlayerConnection> getPlayerConnections() {
+		Connection connection = this.connection;
+		if (connection != null) {
+			return Collections.unmodifiableCollection(connection.playerConnections.values());
+		}
+		return Collections.emptyList();
+	}
+	
+	/**
+	 * If a connection is not established with the AudioConnect server, this will do nothing.
+	 * @param messages - The Messages to be sent to the AudioConnect server
+	 */
+	public void writeAndFlush(Message... messages) {
+		Connection connection = this.connection;
+		if (connection != null && connection.handshakeFuture.isSuccess()) {
+			if (validateWritability(connection.channel)) {
+				writeAndFlush(connection.channel, messages);
+			}
+		}
+	}
+	
+	/**
+	 * Establish a connection with the configured AudioConnect server.<br>
+	 * If a connection is already established or is currently being established, this will do nothing.
+	 * @return a Future for when a valid connection has been established with the AudioConnect server
+	 * @throws IllegalStateException if called after {@link #shutdown()}
+	 */
+	public Future<?> connect() throws IllegalStateException {
+		playerStatusListener.register();
+		
+		return connect(false);
+	}
+	
+	private Future<?> connect(boolean reconnect) throws IllegalStateException {
+		if (bootstrap.group().isShuttingDown()) {
+			throw new IllegalStateException("this client instance has been or is being terminated");
 		}
 		
+		if (!connecting.getAndSet(true)) {
+			try {
+				synchronized (connectionLock) {
+					if (connection == null) {
+						if (reconnect) {
+							reconnectAttempts.incrementAndGet();
+						} else {
+							reconnectAttempts.set(0);
+						}
+						
+						URI uri = config.getConnectionWebsocketUri();
+						logger.info("Connecting to AudioConnect server [" + uri + "] ...");
+						
+						ChannelFuture connectFuture = bootstrap.connect(uri.getHost(), uri.getPort());
+						Channel channel = connectFuture.channel();
+						
+						connection = new Connection(channel);
+						
+						channel.closeFuture().addListener(channelCloseListener);
+						
+						final ChannelPromise handshakeFuture = connection.handshakeFuture;
+						connectFuture.addListener(new ChannelFutureListener() {
+							
+							@Override
+							public void operationComplete(ChannelFuture future) {
+								if (future.isSuccess()) {
+									reconnectAttempts.set(0);
+								} else {
+									handshakeFuture.setFailure(future.cause());
+								}
+							}
+						});
+						
+						return handshakeFuture;
+					}
+				}
+			} finally {
+				connecting.set(false);
+			}
+		}
+		return bootstrap.group().next().newSucceededFuture(null);
+	}
+	
+	/**
+	 * Disconnect from the AudioConnect server and reset.<br>
+	 * If a connection is not established or being established, this will do nothing.
+	 * @return a Future for when the connection has been fully disconnected and closed
+	 */
+	public Future<?> disconnect() {
+		Connection connection;
+		synchronized (connectionLock) {
+			connection = this.connection;
+			this.connection = null;
+		}
+		
+		if (connection != null) {
+			playerScheduler.clear();
+			connection.playerConnections.clear();
+			
+			// Remove channelCloseListener to not reconnect
+			connection.channel.closeFuture().removeListener(channelCloseListener);
+			
+			if (connection.channel.isActive()) {
+				final Promise<Object> disconnectPromise = bootstrap.group().next().newPromise();
+				
+				Object closeFrame = new CloseWebSocketFrame(WEBSOCKET_CLOSE_CODE_GOING_AWAY, "Going offline");
+				connection.channel.writeAndFlush(closeFrame).addListener(new ChannelFutureListener() {
+					
+					@Override
+					public void operationComplete(ChannelFuture future) throws Exception {
+						future.channel().close().addListener(new PromiseNotifier<>(disconnectPromise));
+					}
+				});
+				return disconnectPromise;
+			}
+		}
+		return bootstrap.group().next().newSucceededFuture(null);
+	}
+	
+	/**
+	 * Disconnect from the AudioConnect server and shutdown this client.<br>
+	 * If this client has already been or is being shutdown, this will do nothing.<br>
+	 * <b>Note:</b> This client instance will no longer be able to connect after this is called.
+	 * @return a Future for when this client has completely disconnected and been shutdown.
+	 */
+	public Future<?> shutdown() {
+		if (bootstrap.group().isShuttingDown()) {
+			return GlobalEventExecutor.INSTANCE.newSucceededFuture(null);
+		}
+		
+		final Promise<Object> shutdownPromise = bootstrap.group().next().newPromise();
+		
+		disconnect().addListener(new FutureListener<Object>() {
+			
+			@Override
+			public void operationComplete(Future<Object> future) {
+				bootstrap.group().shutdownGracefully().addListener(new PromiseNotifier<>(shutdownPromise));
+			}
+		});
+		
+		return shutdownPromise;
+	}
+	
+	
+	private void writeAndFlush(Channel channel, Message... messages) {
 		String json = messenger.serialize(messages);
 		channel.writeAndFlush(new TextWebSocketFrame(json), channel.voidPromise());
 	}
 	
-	private Message[] createInitialPayload(Player player) {
-		List<Message> messages = new ArrayList<>();
-		
-		Status status = Status.CONNECTED;
-		messages.add(new StatusMessage(player.getUniqueId(), status));
-		
-		for (Map.Entry<String, AudioTrackSettings> entry : config.getAudioTracks().entrySet()) {
-			AudioTrackMessage.Builder messageBuilder = AudioTrackMessage.builder(player.getUniqueId(), entry.getKey());
-			if (entry.getValue().isDefaultTrack()) {
-				messageBuilder.defaultTrack();
-			}
-			if (entry.getValue().isRepeating()) {
-				messageBuilder.repeating();
-			}
-			if (entry.getValue().isRandom()) {
-				messageBuilder.random();
-			}
-			if (entry.getValue().isFading()) {
-				messageBuilder.fading();
-			}
-			messages.add(messageBuilder.build());
+	private boolean validateWritability(Channel channel) {
+		if (!channel.isWritable()) {
+			logger.warning("Attempted to write message to AudioConnect server but the channel is not writable! "
+					+ "This may be a sign of a slow network connection or a slow server");
+			return false;
 		}
-		
-		dataWriter.writeAudioMessages(player, messages);
-		
-		return messages.toArray(new Message[messages.size()]);
+		return true;
 	}
 	
 	
-	private class Connection {
+	// Accessed on main server thread only
+	private class PayloadBuilder {
 		
-		private final AudioConnectClientHandler handler;
-		private final EventLoopGroup group;
-		private final Channel channel;
+		private final List<Message> messages = new ArrayList<>();
+		private final UUID playerId;
 		
-		private Connection(AudioConnectClientHandler handler, EventLoopGroup group, Channel channel) {
-			this.handler = handler;
-			this.group = group;
-			this.channel = channel;
+		private PayloadBuilder(UUID playerId) {
+			this.playerId = playerId;
+		}
+		
+		private PayloadBuilder status(Status status) {
+			messages.add(new StatusMessage(playerId, status));
+			return this;
+		}
+		
+		private PayloadBuilder tracks() {
+			for (Map.Entry<String, AudioTrackSettings> entry : config.getAudioTracks().entrySet()) {
+				AudioTrackMessage.Builder messageBuilder = AudioTrackMessage.builder(playerId, entry.getKey());
+				if (entry.getValue().isDefaultTrack()) {
+					messageBuilder.defaultTrack();
+				}
+				if (entry.getValue().isRepeating()) {
+					messageBuilder.repeating();
+				}
+				if (entry.getValue().isRandom()) {
+					messageBuilder.random();
+				}
+				if (entry.getValue().isFading()) {
+					messageBuilder.fading();
+				}
+				messages.add(messageBuilder.build());
+			}
+			return this;
+		}
+		
+		private PayloadBuilder audio() {
+			playerDataWriter.writeAudioMessages(Bukkit.getPlayer(playerId), messages);
+			return this;
+		}
+		
+		private Message[] build() {
+			return messages.toArray(new Message[messages.size()]);
 		}
 		
 	}
 	
+	private class PlayerStatusListener implements Runnable, Listener {
+		
+		private final AtomicBoolean registered = new AtomicBoolean();
+		
+		private void register() {
+			if (!registered.getAndSet(true)) {
+				Bukkit.getScheduler().runTask(plugin, this);
+			}
+		}
+		
+		@Override
+		public void run() {
+			Bukkit.getPluginManager().registerEvents(this, plugin);
+		}
+		
+		@EventHandler
+		private void onPlayerJoin(PlayerJoinEvent event) {
+			Connection connection = AudioConnectClient.this.connection;
+			if (connection != null) {
+				UUID playerId = event.getPlayer().getUniqueId();
+				PlayerConnection playerConnection = connection.playerConnections.get(playerId);
+				if (playerConnection != null && !playerConnection.online.getAndSet(true)) {
+					playerScheduler.addPlayer(playerId);
+					
+					Status status = Status.ONLINE;
+					writeAndFlush(new PayloadBuilder(playerId).status(status).audio().build());
+					
+					Bukkit.getPluginManager().callEvent(new PlayerAudioStatusEvent(event.getPlayer(), status));
+				}
+			}
+		}
+		
+		@EventHandler
+		private void onPlayerQuit(PlayerQuitEvent event) {
+			Connection connection = AudioConnectClient.this.connection;
+			if (connection != null) {
+				UUID playerId = event.getPlayer().getUniqueId();
+				PlayerConnection playerConnection = connection.playerConnections.get(playerId);
+				if (playerConnection != null && playerConnection.online.getAndSet(false)) {
+					playerScheduler.removePlayer(playerId);
+					
+					Status status = Status.OFFLINE;
+					writeAndFlush(new PayloadBuilder(playerId).status(status).build());
+					
+					Bukkit.getPluginManager().callEvent(new PlayerAudioStatusEvent(event.getPlayer(), status));
+				}
+			}
+		}
+		
+	}
+	
+	
+	private class ConnectionChannelIntializer extends ChannelInitializer<SocketChannel> {
+		
+		// Connect with V13 (RFC 6455 aka HyBi-17)
+		private final WebSocketVersion WS_VERSION = WebSocketVersion.V13;
+		
+		@Override
+		protected void initChannel(SocketChannel channel) throws SSLException {
+			URI uri = config.getConnectionWebsocketUri();
+			
+			DefaultHttpHeaders headers = new DefaultHttpHeaders();
+			headers.add(Messenger.USER_ID_HEADER, config.getConnectionUserId().toString());
+			headers.add(Messenger.USER_PASSWORD_HEADER, config.getConnectionUserPassword());
+			headers.add(Messenger.SUPPLIER_ID_HEADER, config.getConnectionServerId());
+			
+			WebSocketClientHandshaker handshaker = WebSocketClientHandshakerFactory.newHandshaker(uri, WS_VERSION, null, false, headers);
+			
+			ChannelPipeline pipeline = channel.pipeline();
+			if (config.isConnectionSecure()) {
+				try {
+					SslContext sslContext = SslContext.newClientContext(InsecureTrustManagerFactory.INSTANCE);
+					pipeline.addLast(sslContext.newHandler(channel.alloc()));
+				} catch (SSLException e) {
+					logger.log(Level.SEVERE, "Shutting down client due to unexpected failure to create SSL context", e);
+					throw e;
+				}
+			}
+			pipeline.addLast(new HttpClientCodec());
+			pipeline.addLast(new HttpObjectAggregator(8192));
+			pipeline.addLast(new AudioConnectClientHandler(handshaker));
+		}
+	}
+	
+	private class ConnectionCloseListener implements ChannelFutureListener {
+		
+		@Override
+		public void operationComplete(ChannelFuture future) {
+			// Fully disconnect to reset client state
+			disconnect();
+			
+			int currentReconnectAttempts = reconnectAttempts.get();
+			int maxReconnectAttempts = config.getReconnectMaxAttempts();
+			if (maxReconnectAttempts > 0 && currentReconnectAttempts >= maxReconnectAttempts) {
+				logger.warning("Stopping client event loop due to reaching the maximum amount of reconnect attempts");
+				return;
+			}
+			
+			int interval = config.getReconnectInterval();
+			double delayRate = config.getReconnectDelay();
+			int delay = (int) (interval * Math.pow(delayRate, currentReconnectAttempts));
+			int maxInterval = config.getReconnectMaxInterval();
+			if (delay > maxInterval) {
+				delay = maxInterval;
+			}
+			
+			logger.warning("Disconnected from AudioConnect server. Reattempting connection in " + (delay / 1000) + " seconds");
+			future.channel().eventLoop().schedule(new Runnable() {
+				
+				@Override
+				public void run() {
+					connect(true);
+				}
+			}, delay, TimeUnit.MILLISECONDS);
+		}
+		
+	}
 	
 	private class AudioConnectClientHandler extends SimpleChannelInboundHandler<Object> {
-		
-		private final Map<UUID, ConnectedPlayer> connectedPlayers = new ConcurrentHashMap<>();
-		private final Set<UUID> offlinePlayers = Sets.newConcurrentHashSet();
 		
 		private final WebSocketClientHandshaker handshaker;
 		
@@ -378,7 +485,7 @@ public class AudioConnectClient {
 		@Override
 		public void channelRead0(final ChannelHandlerContext ctx, Object msg) {
 			if (!handshaker.isHandshakeComplete()) {
-				handleHandshakeResponse(ctx, (FullHttpResponse) msg);
+				finishHandshake(ctx, (FullHttpResponse) msg);
 			} else {
 				if (!(msg instanceof WebSocketFrame)) {
 					logger.warning("Recieved unexpected raw message from AudioConnect server: " + msg);
@@ -392,27 +499,32 @@ public class AudioConnectClient {
 		@Override
 		public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
 			logger.log(Level.WARNING, "Reconnecting to AudioConnect server due to an unexpected exception", cause);
+			if (!connection.handshakeFuture.isDone()) {
+				connection.handshakeFuture.setFailure(cause);
+			}
 			ctx.close();
 		}
 		
-		private void handleHandshakeResponse(ChannelHandlerContext ctx, FullHttpResponse response) {
+		private void finishHandshake(ChannelHandlerContext ctx, FullHttpResponse response) {
 			if (response.getStatus().equals(HttpResponseStatus.SWITCHING_PROTOCOLS)) {
 				try {
 					handshaker.finishHandshake(ctx.channel(), response);
+					connection.handshakeFuture.setSuccess();
 					
 					logger.info("Successfully connected to AudioConnect server!");
 					return;
 				} catch (Exception e) {
-					String responseMsg = response.content().toString(StandardCharsets.UTF_8);
-					logger.severe("Failed to Connect with AudioConnect server: " + responseMsg);
+					connection.handshakeFuture.setFailure(e);
 				}
 			} else {
-				String responseMsg = response.content().toString(StandardCharsets.UTF_8);
-				logger.severe("Failed to Connect with AudioConnect server: " + responseMsg);
+				connection.handshakeFuture.setFailure(new InvalidConfigurationException());
 			}
 			
-			ctx.channel().attr(CONNECTION_REFUSED).set(true);
-			ctx.close();
+			String responseMsg = response.content().toString(StandardCharsets.UTF_8);
+			logger.severe("Failed to Connect with AudioConnect server: " + responseMsg);
+			logger.severe("Stopping client event loop due to failure to establish connection with AudioConnect server");
+			
+			disconnect();
 		}
 		
 		private void handleFrame(ChannelHandlerContext ctx, WebSocketFrame frame) {
@@ -424,8 +536,6 @@ public class AudioConnectClient {
 				CloseWebSocketFrame closeFrame = (CloseWebSocketFrame) frame;
 				logger.info("Recieved closing from AudioConnect server: [" + closeFrame.statusCode() + "] " + closeFrame.reasonText());
 				
-				connectedPlayers.clear();
-				offlinePlayers.clear();
 				ctx.close();
 			} else if (frame instanceof TextWebSocketFrame) {
 				TextWebSocketFrame textFrame = (TextWebSocketFrame) frame;
@@ -462,9 +572,10 @@ public class AudioConnectClient {
 			} else if (message instanceof StatusMessage) {
 				StatusMessage statusMessage = (StatusMessage) message;
 				
-				if (statusMessage.getStatus() == Status.CONNECTED) {
+				if (statusMessage.getStatus() == Status.ONLINE) {
 					final UUID playerId = statusMessage.getId();
-					connectedPlayers.put(playerId, new ConnectedPlayer(playerId, System.currentTimeMillis()));
+					final PlayerConnection playerConnection = new PlayerConnection(playerId, System.currentTimeMillis());
+					connection.playerConnections.put(playerId, playerConnection);
 					
 					// Handle connected player on main thread
 					Bukkit.getScheduler().runTask(plugin, new Runnable() {
@@ -473,32 +584,28 @@ public class AudioConnectClient {
 						public void run() {
 							OfflinePlayer player = Bukkit.getOfflinePlayer(playerId);
 							if (player.isOnline()) {
-								scheduler.addPlayer(playerId);
+								playerConnection.online.set(true);
+								playerScheduler.addPlayer(playerId);
 								
-								writeAndFlush(ctx.channel(), createInitialPayload((Player) player));
+								writeAndFlush(ctx.channel(), new PayloadBuilder(playerId).status(Status.ONLINE).tracks().audio().build());
 								
-								Bukkit.getPluginManager().callEvent(new PlayerAudioStatusEvent(player, Status.CONNECTED));
+								Bukkit.getPluginManager().callEvent(new PlayerAudioStatusEvent(player, Status.ONLINE));
 							} else {
-								offlinePlayers.add(playerId);
-								
-								StatusMessage statusMessage = new StatusMessage(playerId, Status.DISCONNECTED);
-								writeAndFlush(ctx.channel(), statusMessage);
+								writeAndFlush(ctx.channel(), new PayloadBuilder(playerId).status(Status.OFFLINE).tracks().build());
 							}
 						}
-						
 					});
-				} else if (statusMessage.getStatus() == Status.DISCONNECTED) {
+				} else if (statusMessage.getStatus() == Status.OFFLINE) {
 					final UUID playerId = statusMessage.getId();
-					connectedPlayers.remove(playerId);
-					offlinePlayers.remove(playerId);
+					connection.playerConnections.remove(playerId);
 					
 					// Handle disconnected player on main thread
 					Bukkit.getScheduler().runTask(plugin, new Runnable() {
 						
 						@Override
 						public void run() {
-							if (scheduler.removePlayer(playerId)) {
-								Event statusEvent = new PlayerAudioStatusEvent(Bukkit.getOfflinePlayer(playerId), Status.DISCONNECTED);
+							if (playerScheduler.removePlayer(playerId)) {
+								Event statusEvent = new PlayerAudioStatusEvent(Bukkit.getOfflinePlayer(playerId), Status.OFFLINE);
 								Bukkit.getPluginManager().callEvent(statusEvent);
 							}
 						}
@@ -506,7 +613,9 @@ public class AudioConnectClient {
 				}
 			} else if (message instanceof HeartbeatMessage) {
 				// If for some reason the server doesn't receive the pong frame, it will send a heartbeat message
-				writeAndFlush(ctx.channel(), message);
+				if (validateWritability(ctx.channel())) {
+					writeAndFlush(ctx.channel(), message);
+				}
 			} else {
 				logger.warning("Recieved unexpected Message type from AudioConnect server '" + message.getType() + "'");
 			}
@@ -515,28 +624,70 @@ public class AudioConnectClient {
 	}
 	
 	
-	public static class ConnectedPlayer {
+	private static class PromiseNotifier<V> implements FutureListener<V> {
+		
+		private final Promise<? super V> promise;
+		
+		private PromiseNotifier(Promise<? super V> promise) {
+			this.promise = promise;
+		}
+		
+		@Override
+		public void operationComplete(Future<V> future) throws Exception {
+			if (future.isSuccess()) {
+				promise.trySuccess(future.get());
+			} else if (future.isCancelled()) {
+				promise.cancel(false);
+			} else {
+				promise.setFailure(future.cause());
+			}
+		}
+		
+	}
+	
+	
+	private static class Connection {
+		
+		private final ConcurrentHashMap<UUID, PlayerConnection> playerConnections = new ConcurrentHashMap<>();
+		private final ChannelPromise handshakeFuture;
+		private final Channel channel;
+		
+		private Connection(Channel channel) {
+			handshakeFuture = channel.newPromise();
+			this.channel = channel;
+		}
+		
+	}
+	
+	public static class PlayerConnection {
 		
 		private final UUID playerId;
-		private final long timeConnected;
+		private final long connectionTimestamp;
+		// Whether or not the player is online to the server
+		private final AtomicBoolean online = new AtomicBoolean();
 		
-		private ConnectedPlayer(UUID playerId, long timeConnected) {
+		private PlayerConnection(UUID playerId, long connectionTimestamp) {
 			this.playerId = playerId;
-			this.timeConnected = timeConnected;
+			this.connectionTimestamp = connectionTimestamp;
 		}
 		
 		public OfflinePlayer getPlayer() {
 			return Bukkit.getOfflinePlayer(playerId);
 		}
 		
-		public long getTimeConnected() {
-			return timeConnected;
+		public long getConnectionTimestamp() {
+			return connectionTimestamp;
 		}
 		
 	}
 	
 	public static interface PlayerAudioDataWriter extends PlayerDataWriter {
 		
+		/**
+		 * This method will only be called on the main server thread.
+		 * @param player - The player to write the audio messages for
+		 * @param messageBuffer - the list to add the audio messages to
+		 */
 		void writeAudioMessages(Player player, List<Message> messageBuffer);
 		
 	}
