@@ -33,9 +33,6 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
 				<version>2.3</version>
-				<configuration>
-					<minimizeJar>false</minimizeJar>
-				</configuration>
 				<executions>
 					<execution>
 						<phase>package</phase>
@@ -44,6 +41,15 @@
 						</goals>
 					</execution>
 				</executions>
+				<configuration>
+					<minimizeJar>false</minimizeJar>
+					<relocations>
+						<relocation>
+							<pattern>com.deadmandungeons.deadmanplugin</pattern>
+							<shadedPattern>com.deadmandungeons.audioconnect.deadmanplugin</shadedPattern>
+						</relocation>
+					</relocations>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>
@@ -85,7 +91,6 @@
 			<groupId>com.deadmandungeons</groupId>
 			<artifactId>deadman-plugin</artifactId>
 			<version>1.8.10</version>
-			<scope>provided</scope>
 		</dependency>
 		
 		<dependency>
