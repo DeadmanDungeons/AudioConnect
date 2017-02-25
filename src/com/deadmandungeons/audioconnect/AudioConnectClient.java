@@ -75,7 +75,7 @@ import io.netty.util.concurrent.Promise;
 
 /**
  * The class which operates as the data supplier client to an AudioConnect server.<br>
- * <b>Note:</b> All public operations are thread safe.
+ * <b>Note:</b> this class and its operations are thread safe.
  * @author Jon
  */
 public class AudioConnectClient {

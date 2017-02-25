@@ -7,11 +7,11 @@ import org.bukkit.event.HandlerList;
 import com.deadmandungeons.connect.commons.StatusMessage.Status;
 
 /**
- * Called when a the connection status for a player between the AudioConnect client, Minecraft client,
- * and the AudioConnect server changes. {@link #getStatus()} will be {@link Status#CONNECTED} if the player
- * connected to the AudioConnect server through both the AudioConnect client and Minecraft client, and thus
- * the player is online. {@link #getStatus()} will be {@link Status#DISCONNECTED} if the player disconnected
- * from the AudioConnect server through either the AudioConnect client or Minecraft client or both.
+ * Called when the connection status for a player between the web client, Minecraft client,
+ * and the AudioConnect server changes. {@link #getStatus()} will be {@link Status#ONLINE} if the player
+ * connected to the AudioConnect server through both the web client and Minecraft client, and thus
+ * the player is online. {@link #getStatus()} will be {@link Status#OFFLINE} if the player disconnected
+ * from the AudioConnect server through either the web client or Minecraft client or both.
  * @author Jon
  */
 public class PlayerAudioStatusEvent extends Event {
