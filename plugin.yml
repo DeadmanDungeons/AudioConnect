@@ -8,6 +8,7 @@ depend: [DeadmanPlugin, WorldGuard]
 
 commands:
     ac:
+        aliases: [audio, music]
         description: AudioConnect command prefix. Use "/ac help" to see all the AudioConnect commands you can use.
     music:
         description: Alias for /ac connect
