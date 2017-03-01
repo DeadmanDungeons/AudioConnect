@@ -362,6 +362,7 @@ public final class AudioConnect extends DeadmanPlugin {
 			super.loadEntries(plugin);
 			userId = null;
 			websocketUri = null;
+			webappUrl = null;
 		}
 		
 		
