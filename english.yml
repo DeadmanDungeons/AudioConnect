@@ -27,9 +27,13 @@ succeeded:
 
 misc:
   announcement: 'Experience this server on a whole new level with integrated server audio! '
+  register-details: |
+      &7Login to the MC server using the address below and execute this command again to validate ownership your account
+        
+        &6account.minecraftaudio.com
   connect-details: |
       &7Click this URL to listen:
         
-      &6<connect-url>
+        &6<connect-url>
   top-bar: '&8\<&m                             &r&6 Audio Connect &8&m                             &r&8\>'
   bottom-bar: '&8\<&m                                                                             &r&8\>'
