@@ -217,7 +217,7 @@ public final class AudioConnect extends DeadmanPlugin {
 					}
 					for (AudioTrack audioTrack : audioTracks) {
 						if ((audioTrack.getDayTime() == null || audioTrack.getDayTime().check(loc.getWorld()))
-								&& audioList.isAudioIdValid(audioTrack.getAudioId())) {
+								&& audioList.contains(audioTrack.getAudioId())) {
 							Set<String> audioIds = audioIdsByTrack.get(audioTrack.getTrackId());
 							if (audioIds == null) {
 								audioIds = new HashSet<>();

@@ -21,7 +21,7 @@ public class AudioList {
 		this.logger = logger;
 	}
 	
-	public boolean isAudioIdValid(String audioId) {
+	public boolean contains(String audioId) {
 		if (!audioIds.contains(audioId)) {
 			long now = System.currentTimeMillis();
 			Long lastWarnTime = invalidIds.get(audioId);

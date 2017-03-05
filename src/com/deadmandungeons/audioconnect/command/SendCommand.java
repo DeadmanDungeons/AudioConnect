@@ -52,7 +52,7 @@ public class SendCommand implements Command {
 			plugin.getMessenger().sendErrorMessage(sender, "failed.player-not-connected", playerName);
 			return false;
 		}
-		if (!plugin.getAudioList().isAudioIdValid(audioId)) {
+		if (!plugin.getAudioList().contains(audioId)) {
 			String reason = plugin.getMessenger().getMessage("failed.audio-not-uploaded", false);
 			plugin.getMessenger().sendErrorMessage(sender, "failed.invalid-audio-id", audioId, reason);
 			return false;
