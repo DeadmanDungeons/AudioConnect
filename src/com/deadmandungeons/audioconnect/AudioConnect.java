@@ -118,10 +118,10 @@ public final class AudioConnect extends DeadmanPlugin {
 	
 	public String getPlayerConnectUrl(UUID playerId) {
 		String webappUrl = config.getConnectionWebappUrl().toString();
-		String serverId = config.getConnectionServerId();
+		String serverId = ConnectUtils.encodeUuidBase64(config.getConnectionServerId());
 		String encodedPlayerId = ConnectUtils.encodeUuidBase64(playerId);
 		
-		return webappUrl + "/connect?sid=" + serverId + "&cid=" + encodedPlayerId;
+		return webappUrl + "/connect?s=" + serverId + "&u=" + encodedPlayerId;
 	}
 	
 	
@@ -354,6 +354,7 @@ public final class AudioConnect extends DeadmanPlugin {
 		
 		
 		private volatile UUID userId;
+		private volatile UUID serverId;
 		private volatile URI websocketUri;
 		private volatile URL webappUrl;
 		
@@ -376,7 +377,7 @@ public final class AudioConnect extends DeadmanPlugin {
 				getInstance().getLogger().severe(String.format(INVALID_REQUIRED_PROPERTY, connectionUserPassword.getPath()));
 				return false;
 			}
-			if (StringUtils.isEmpty(connectionServerId.value())) {
+			if (getConnectionServerId() == null) {
 				getInstance().getLogger().severe(String.format(INVALID_REQUIRED_PROPERTY, connectionServerId.getPath()));
 				return false;
 			}
@@ -407,8 +408,14 @@ public final class AudioConnect extends DeadmanPlugin {
 		}
 		
 		@Override
-		public synchronized String getConnectionServerId() {
-			return connectionServerId.value();
+		public synchronized UUID getConnectionServerId() {
+			if (serverId == null) {
+				String serveridStr = connectionServerId.value();
+				if (!StringUtils.isEmpty(serveridStr)) {
+					serverId = ConnectUtils.parseId(serveridStr);
+				}
+			}
+			return serverId;
 		}
 		
 		@Override

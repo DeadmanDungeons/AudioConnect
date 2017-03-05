@@ -6,9 +6,9 @@
 # ------------------------------------------------------------ #
 
 # NOTICE:
-#  For more information and a step-by-step guide on how to set up
+#  For more information and a step-by-step guide on how to setup
 #  and configure AudioConnect, refer to the quick and easy tutorial
-#  here (https://youtube.com/watch?v=)
+#  here (https://minecraftaudio.com/tutorial)
 
 connection:
   # The user-id of your AudioConnect account (Minecraft UUID/Username)
@@ -17,7 +17,7 @@ connection:
   # The password of your AudioConnect account (Chosen when creating an account)
   user-password: ''
 
-  # The ID for this server as defined when adding this server to your AudioConnect account
+  # The ID for this server (Generated for each server added to your account)
   server-id: ''
 
   # NOTICE: These values will most likely never need to be changed and probably shouln't (depending on use case)
