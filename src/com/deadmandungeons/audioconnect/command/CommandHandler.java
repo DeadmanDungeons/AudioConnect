@@ -32,7 +32,7 @@ public class CommandHandler extends DeadmanExecutor {
 		registerCommand(new UnmuteCommand());
 		
 		CommandExecutor aliasExecutor = new AliasCommandExecutor();
-		plugin.getCommand("music").setExecutor(aliasExecutor);
+		plugin.getCommand("audio").setExecutor(aliasExecutor);
 		plugin.getCommand("mute").setExecutor(aliasExecutor);
 		plugin.getCommand("unmute").setExecutor(aliasExecutor);
 	}
@@ -96,7 +96,7 @@ public class CommandHandler extends DeadmanExecutor {
 			}
 			
 			Player player = (Player) sender;
-			if (label.equalsIgnoreCase("music")) {
+			if (label.equalsIgnoreCase("audio")) {
 				return getCommand(ConnectCommand.class).execute(player);
 			} else if (label.equalsIgnoreCase("mute")) {
 				return controlVolume(player, true);
