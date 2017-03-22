@@ -12,7 +12,7 @@ import com.deadmandungeons.deadmanplugin.command.CommandInfo;
 @CommandInfo(
 	name = "Connect",
 	permissions = {"audioconnect.user.connect"},
-	description = "Get the AudioConnect URL for your playing session on this server",
+	description = "Get the connection URL for your dynamic audio stream on this server",
 	inGameOnly = true
 )//@formatter:on
 public class ConnectCommand implements Command {
@@ -28,11 +28,7 @@ public class ConnectCommand implements Command {
 	
 	public boolean execute(Player player) {
 		if (!plugin.getClient().isConnected()) {
-			plugin.getMessenger().sendErrorMessage(player, "failed.not-connected-server");
-			return false;
-		}
-		if (plugin.getClient().isPlayerConnected(player.getUniqueId())) {
-			plugin.getMessenger().sendErrorMessage(player, "failed.already-connected");
+			plugin.getMessenger().sendErrorMessage(player, "failed.client-disconnected");
 			return false;
 		}
 		

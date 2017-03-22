@@ -27,6 +27,7 @@ public class CommandHandler extends DeadmanExecutor {
 		registerCommand(SendCommand.class);
 		registerCommand(ReloadCommand.class);
 		registerCommand(RegisterCommand.class);
+		registerCommand(VerifyCommand.class);
 		
 		registerCommand(new MuteCommand());
 		registerCommand(new UnmuteCommand());

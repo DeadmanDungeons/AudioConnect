@@ -362,6 +362,7 @@ public final class AudioConnect extends DeadmanPlugin {
 		public synchronized void loadEntries(DeadmanPlugin plugin) throws IllegalStateException {
 			super.loadEntries(plugin);
 			userId = null;
+			serverId = null;
 			websocketUri = null;
 			webappUrl = null;
 		}

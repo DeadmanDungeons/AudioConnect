@@ -30,14 +30,14 @@ import com.deadmandungeons.deadmanplugin.command.SubCommandInfo;
 				@ArgumentInfo(argName = "players", argType = ArgType.NON_VARIABLE),
 				@ArgumentInfo(argName = "page", argType = ArgType.OPT_VARIABLE, varType = Integer.class)
 			},
-			description = "List all players that are connected from the web client"
+			description = "List all players that are connected to the web client for this server"
 		),
 		@SubCommandInfo(
 			arguments = {
 				@ArgumentInfo(argName = "audio", argType = ArgType.NON_VARIABLE),
 				@ArgumentInfo(argName = "page", argType = ArgType.OPT_VARIABLE, varType = Integer.class)
 			},
-			description = "List all the available audio IDs for files that have been uploaded to your AudioConnect account"
+			description = "List all the available audio IDs for files that have been uploaded to your account"
 		)
 	}
 )//@formatter:on
@@ -50,7 +50,7 @@ public class ListCommand implements Command {
 		Arguments.validateType(args, getClass());
 		
 		if (!plugin.getClient().isConnected()) {
-			plugin.getMessenger().sendErrorMessage(sender, "failed.not-connected-server");
+			plugin.getMessenger().sendErrorMessage(sender, "failed.client-disconnected");
 			return false;
 		}
 		
