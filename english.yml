@@ -23,9 +23,13 @@ failed:
   invalid-track-id: "&cInvalid track ID '<track-id>': <reason>"
   invalid-delay-range: '&cThe audio delay <delay-range> is invalid. Valid formats are ''\<min\>-\<max\>'' or ''\<constant\>'''
   verify-invalid-config: '&4Invalid Config: &cThe AudioConnect account and server information must be configured'
+  verify-invalid-address: '&cInvalid address syntax'
+  verify-in-progress: '&cA verify request is already in progress'
   verify-response-401: '&4The verify request was rejected: &cThe configured account credentials are invalid'
   verify-response-404: '&4The verify request was rejected: &cYour account does not have a server with the configured server-id'
-  verify-response: '&cThe verify request was rejected for an unexpected reason: <code>'
+  verify-response-409: '&4The verify request was rejected: &cThe given address has already been verified for a different server'
+  verify-response: '&4The verify request was rejected: &cUnexpected reason (<code>)'
+  verify-invalid: '&cThe provided address did not verify as the public address for this server'
   verify-error: '&cAn unexpected error occured while contacting AudioConnect server'
 
 succeeded:
@@ -33,9 +37,12 @@ succeeded:
   audio-sent-all: 'Audio <audio-id> has been sent to all connected players'
   audio-sent-player: 'Audio <audio-id> has been sent to <player-name>'
   volume-set: 'Audio has been <state>'
+  address-verified: "&7This server's public address &6<address> &7has been &averified &7with your account at <host>"
 
 misc:
   announcement: 'Experience this server on a whole new level with integrated server audio! '
+  verify-request: 'Verifying the address with your account at <host> ...'
+  verify-check: 'Checking verification status...'
   register-details: |
       &7Login to the server using the address below and execute this command again to validate ownership your account
         
@@ -44,12 +51,5 @@ misc:
       &7Click this URL to listen:
         
         &6<connect-url>
-  verify-details: |
-      &7  Ownership verification of this server has been initiated.
-        Click this link to continue.
-      
-      &6&n<url>&r
-        
-        &cNOTICE: This verification will expire in <expire-time>
   top-bar: '&8\<&m                             &r&6 Audio Connect &8&m                             &r&8\>'
   bottom-bar: '&8\<&m                                                                             &r&8\>'
