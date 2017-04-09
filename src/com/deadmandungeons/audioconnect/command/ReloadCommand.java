@@ -13,7 +13,7 @@ import com.deadmandungeons.deadmanplugin.command.CommandInfo;
 	name = "Reload",
 	permissions = {"audioconnect.admin.reload"},
 	inGameOnly = false,
-	description = "Reload plugin files and reconnect to AudioConnect server"
+	description = "Reload plugin files and reconnect to the AudioConnect server"
 )//@formatter:on
 public class ReloadCommand implements Command {
 	

@@ -13,7 +13,7 @@ public interface AudioConnectConfig {
 	
 	String getConnectionUserPassword();
 	
-	String getConnectionServerId();
+	UUID getConnectionServerId();
 	
 	URI getConnectionWebsocketUri();
 	

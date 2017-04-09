@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.deadmandungeons</groupId>
 	<artifactId>audio-connect</artifactId>
-	<version>1.2.0</version>
+	<version>1.2.3</version>
 	<name>AudioConnect</name>
 	
 	<build>
@@ -74,7 +74,7 @@
 		<dependency>
 			<groupId>com.deadmandungeons</groupId>
 			<artifactId>audio-connect-messages</artifactId>
-			<version>1.1.2</version>
+			<version>1.1.3</version>
 			<exclusions>
 				<exclusion>
 					<groupId>com.google.code.gson</groupId>
@@ -90,7 +90,7 @@
 		<dependency>
 			<groupId>com.deadmandungeons</groupId>
 			<artifactId>deadman-plugin</artifactId>
-			<version>1.8.10</version>
+			<version>1.8.11</version>
 		</dependency>
 		
 		<dependency>

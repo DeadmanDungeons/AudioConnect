@@ -30,14 +30,14 @@ import com.deadmandungeons.deadmanplugin.command.SubCommandInfo;
 				@ArgumentInfo(argName = "players", argType = ArgType.NON_VARIABLE),
 				@ArgumentInfo(argName = "page", argType = ArgType.OPT_VARIABLE, varType = Integer.class)
 			},
-			description = "List all online players that are connected to AudioConnect"
+			description = "List all players that are connected to the web client for this server"
 		),
 		@SubCommandInfo(
 			arguments = {
 				@ArgumentInfo(argName = "audio", argType = ArgType.NON_VARIABLE),
 				@ArgumentInfo(argName = "page", argType = ArgType.OPT_VARIABLE, varType = Integer.class)
 			},
-			description = "List all the available audio files that have been uploaded to the AudioConnect server"
+			description = "List all the available audio IDs for files that have been uploaded to your account"
 		)
 	}
 )//@formatter:on
@@ -50,7 +50,7 @@ public class ListCommand implements Command {
 		Arguments.validateType(args, getClass());
 		
 		if (!plugin.getClient().isConnected()) {
-			plugin.getMessenger().sendErrorMessage(sender, "failed.not-connected-server");
+			plugin.getMessenger().sendErrorMessage(sender, "failed.client-disconnected");
 			return false;
 		}
 		
@@ -96,16 +96,13 @@ public class ListCommand implements Command {
 		ChatColor color1 = plugin.getMessenger().getPrimaryColor();
 		ChatColor color2 = plugin.getMessenger().getSecondaryColor();
 		ChatColor color3 = plugin.getMessenger().getTertiaryColor();
-		
 		String reset = ChatColor.RESET.toString();
-		String barLeft = color3 + "<" + ChatColor.STRIKETHROUGH;
-		String barRight = reset + color3 + ">";
 		
 		String paging = (list.length > itemsPerPage ? "[pg. " + pageNum + "/" + maxPage + "] " : "");
 		String barSpace = (paging.isEmpty() ? "----" : "");
 		String title = reset + color2 + " Connected Players " + paging + color3;
 		String topBar = "-------------" + barSpace + title + ChatColor.STRIKETHROUGH + barSpace + "-------------";
-		sender.sendMessage(barLeft + topBar + barRight);
+		sender.sendMessage(color3 + "<" + ChatColor.STRIKETHROUGH + topBar + reset + color3 + ">");
 		
 		if (list.length > 0) {
 			sender.sendMessage(color2 + "  KEY: " + color1 + color1.name() + color2 + " = Online, " + ChatColor.RED + "RED" + color2 + " = Offline");
@@ -129,7 +126,7 @@ public class ListCommand implements Command {
 			}
 		}
 		
-		sender.sendMessage(barLeft + "---------------------------------------------------" + barRight);
+		plugin.getMessenger().sendMessage(sender, "misc.bottom-bar");
 	}
 	
 	private void listAudio(CommandSender sender, int pageNum) {
@@ -146,16 +143,13 @@ public class ListCommand implements Command {
 		ChatColor color1 = plugin.getMessenger().getPrimaryColor();
 		ChatColor color2 = plugin.getMessenger().getSecondaryColor();
 		ChatColor color3 = plugin.getMessenger().getTertiaryColor();
-		
 		String reset = ChatColor.RESET.toString();
-		String barLeft = color3 + "<" + ChatColor.STRIKETHROUGH;
-		String barRight = reset + color3 + ">";
 		
 		String paging = (list.length > itemsPerPage ? "[pg. " + pageNum + "/" + maxPage + "] " : "");
 		String barSpace = (paging.isEmpty() ? "-----" : "");
 		String title = reset + color2 + " Audio List " + paging + color3;
 		String topBar = "----------------" + barSpace + title + ChatColor.STRIKETHROUGH + barSpace + "----------------";
-		sender.sendMessage(barLeft + topBar + barRight);
+		sender.sendMessage(color3 + "<" + ChatColor.STRIKETHROUGH + topBar + reset + color3 + ">");
 		
 		if (list.length == 0) {
 			sender.sendMessage(ChatColor.RED + "  * NONE *");
@@ -167,7 +161,7 @@ public class ListCommand implements Command {
 			}
 		}
 		
-		sender.sendMessage(barLeft + "---------------------------------------------------" + barRight);
+		plugin.getMessenger().sendMessage(sender, "misc.bottom-bar");
 	}
 	
 }

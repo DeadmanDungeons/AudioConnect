@@ -1,6 +1,6 @@
 name: AudioConnect
 main: com.deadmandungeons.audioconnect.AudioConnect
-version: 1.2.0
+version: 1.2.3
 author: Weasel_Squeezer
 website: https://minecraftaudio.com
 
@@ -9,7 +9,8 @@ depend: [DeadmanPlugin, WorldGuard]
 commands:
     ac:
         description: AudioConnect command prefix. Use "/ac help" to see all the AudioConnect commands you can use.
-    music:
+    audio:
+        aliases: [music]
         description: Alias for /ac connect
     mute:
         description: Alias for /ac mute
