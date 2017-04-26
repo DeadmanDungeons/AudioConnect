@@ -25,8 +25,6 @@ public interface AudioConnectConfig {
 	
 	int getConnectionWebsocketPort();
 	
-	int getConnectionWebappPort();
-	
 	String getConnectionWebappPath();
 	
 	int getReconnectInterval();
