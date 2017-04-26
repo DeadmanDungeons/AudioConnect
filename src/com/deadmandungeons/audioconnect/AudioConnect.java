@@ -342,7 +342,6 @@ public final class AudioConnect extends DeadmanPlugin {
 		private final ConfigEntry<Boolean> connectionSecure = entry(Boolean.class, "connection.endpoint.secure");
 		private final ConfigEntry<String> connectionHost = entry(String.class, "connection.endpoint.host");
 		private final ConfigEntry<Number> connectionWebsocketPort = entry(Number.class, "connection.endpoint.websocket-port");
-		private final ConfigEntry<Number> connectionWebappPort = entry(Number.class, "connection.endpoint.webapp-port");
 		private final ConfigEntry<String> connectionWebappPath = entry(String.class, "connection.endpoint.webapp-path");
 		private final ConfigEntry<Number> reconnectInterval = entry(Number.class, "reconnect.interval");
 		private final ConfigEntry<Number> reconnectMaxInterval = entry(Number.class, "reconnect.max-interval");
@@ -430,7 +429,7 @@ public final class AudioConnect extends DeadmanPlugin {
 		@Override
 		public synchronized URL getConnectionWebappUrl() {
 			if (webappUrl == null) {
-				webappUrl = createWebappUrl(connectionSecure, connectionHost, connectionWebappPort, connectionWebappPath);
+				webappUrl = createWebappUrl(connectionSecure, connectionHost, connectionWebappPath);
 			}
 			return webappUrl;
 		}
@@ -448,11 +447,6 @@ public final class AudioConnect extends DeadmanPlugin {
 		@Override
 		public synchronized int getConnectionWebsocketPort() {
 			return connectionWebsocketPort.value().intValue();
-		}
-		
-		@Override
-		public synchronized int getConnectionWebappPort() {
-			return connectionWebappPort.value().intValue();
 		}
 		
 		@Override
@@ -511,20 +505,18 @@ public final class AudioConnect extends DeadmanPlugin {
 			}
 		}
 		
-		private static URL createWebappUrl(ConfigEntry<Boolean> secure, ConfigEntry<String> host, ConfigEntry<Number> port,
-				ConfigEntry<String> path) {
+		private static URL createWebappUrl(ConfigEntry<Boolean> secure, ConfigEntry<String> host, ConfigEntry<String> path) {
 			try {
 				String validPath = path.value().replaceAll("^([^/])", "/$1").replaceAll("/$", "");
-				return createUri((secure.value() ? "https" : "http"), host.value(), port.value().intValue(), validPath).toURL();
+				return createUri((secure.value() ? "https" : "http"), host.value(), -1, validPath).toURL();
 			} catch (MalformedURLException | URISyntaxException e1) {
 				try {
 					String validPath = path.defaultValue().replaceAll("^([^/])", "/$1").replaceAll("/$", "");
-					URL url = createUri((secure.defaultValue() ? "https" : "http"), host.defaultValue(), port.defaultValue().intValue(), validPath)
-							.toURL();
+					URL url = createUri((secure.defaultValue() ? "https" : "http"), host.defaultValue(), -1, validPath).toURL();
 					getInstance().getLogger().warning("Invalid host syntax at " + host.getPath() + " in config. Using default URL " + url);
 					return url;
 				} catch (MalformedURLException | URISyntaxException e2) {
-					String paths = StringUtils.join(new String[] { secure.getPath(), host.getPath(), port.getPath(), path.getPath() }, ", ");
+					String paths = StringUtils.join(new String[] { secure.getPath(), host.getPath(), path.getPath() }, ", ");
 					throw new IllegalStateException("A URL for the config values at paths (" + paths + ") in the default configuration file "
 							+ "could not be created! The default configuration must contain valid values.", e2);
 				}

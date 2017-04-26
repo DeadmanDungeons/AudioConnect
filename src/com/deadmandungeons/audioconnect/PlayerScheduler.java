@@ -19,7 +19,7 @@ import org.bukkit.scheduler.BukkitTask;
  * The amount of partitioned tasks will never exceed the defined <code>tickFrequency</code>
  * or the optionally defined <code>maximumTasks</code>. The partitioned tasks are only scheduled
  * for execution whenever there are players added, and will stop and idle when there are none.<br>
- * There are simple 3 methods to handle scheduling:<br>
+ * There are 3 simple methods to handle scheduling:<br>
  * <ul>
  * <li>{@link #addPlayer(UUID)}</li>
  * <li>{@link #removePlayer(UUID)}</li>
