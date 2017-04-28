@@ -60,7 +60,7 @@ public class SendCommand implements Command {
 		String trackId = (args.length == 3 ? (String) args[2] : null);
 		
 		if (!plugin.getAudioList().contains(audioId)) {
-			String reason = plugin.getMessenger().getMessage("failed.audio-not-uploaded", false);
+			String reason = plugin.getMessenger().getMessage("failed.audio-not-added", false);
 			plugin.getMessenger().sendErrorMessage(sender, "failed.invalid-audio-id", audioId, reason);
 			return false;
 		}
@@ -99,7 +99,7 @@ public class SendCommand implements Command {
 		return true;
 	}
 	
-	private boolean sendConnectedPlayer(CommandSender sender, String playerName, String audioId, String trackId) {
+	public boolean sendConnectedPlayer(CommandSender sender, String playerName, String audioId, String trackId) {
 		Player player = Bukkit.getPlayer(playerName);
 		if (player == null || !plugin.getClient().isPlayerConnected(player.getUniqueId())) {
 			plugin.getMessenger().sendErrorMessage(sender, "failed.player-not-connected", playerName);

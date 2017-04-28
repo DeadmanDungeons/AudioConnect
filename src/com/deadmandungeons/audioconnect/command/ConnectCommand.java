@@ -26,6 +26,10 @@ public class ConnectCommand implements Command {
 		return execute((Player) sender);
 	}
 	
+	/**
+	 * @param player the player to execute the connect command as
+	 * @return <code>true</code> if the command executed successfully, and <code>false</code> otherwise
+	 */
 	public boolean execute(Player player) {
 		if (!plugin.getClient().isConnected()) {
 			plugin.getMessenger().sendErrorMessage(player, "failed.client-disconnected");

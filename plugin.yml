@@ -38,12 +38,12 @@ permissions:
         default: op
         description: Gives access to all AudioConnect setup permissions
         children:
-            audioconnect.admin.register: true
+            audioconnect.admin.verify: true
             audioconnect.admin.reload: true
             audioconnect.admin.list: true
             audioconnect.admin.send: true
-    audioconnect.admin.register:
-        description: Gives access to initiate the registration of the server with an AudioConnect account
+    audioconnect.admin.verify:
+        description: Gives access to verify the public address of this server
     audioconnect.admin.reload:
         description: Gives access to reload this plugin and reconnect
     audioconnect.admin.list:

@@ -28,7 +28,6 @@ import org.bukkit.scheduler.BukkitTask;
  * These operations are synchronized and thread safe.<br>
  * Note that all scheduled tasks run on the main server thread which synchronizes
  * with this scheduler as the intrinsic lock.
- * @see {@link #PlayerScheduler(Plugin, PlayerDataWriter, int, int)}
  * @author Jon
  */
 public class PlayerScheduler {
@@ -46,9 +45,9 @@ public class PlayerScheduler {
 	 * Construct a new PlayerScheduler
 	 * <b>Note:</b> maximumTasks will be set as the given tickFrequency, so this is equivalent to:
 	 * {@link #PlayerScheduler(Plugin, PlayerDataWriter, int, int) PlayerScheduler(plugin, writer, tickFrequency, tickFrequency)}
-	 * @param plugin - The plugin in which tasks will be scheduled for
-	 * @param writer - The player data writer that will be notified for each player during each scheduled execution
-	 * @param tickFrequency - The frequency in server ticks that the given data writer will be notified for each player
+	 * @param plugin the plugin in which tasks will be scheduled for
+	 * @param writer the player data writer that will be notified for each player during each scheduled execution
+	 * @param tickFrequency the frequency in server ticks that the given data writer will be notified for each player
 	 * @throws IllegalArgumentException if tickFrequency or maximumTasks is less than 1
 	 */
 	public PlayerScheduler(Plugin plugin, PlayerDataWriter writer, int tickFrequency) throws IllegalArgumentException {
@@ -57,10 +56,10 @@ public class PlayerScheduler {
 	
 	/**
 	 * Construct a new PlayerScheduler
-	 * @param plugin - The plugin in which tasks will be scheduled for
-	 * @param writer - The player data writer that will be notified for each player during each scheduled execution
-	 * @param tickFrequency - The frequency in server ticks that the given data writer will be notified for each player
-	 * @param maximumTasks - The maximum amount of displaced scheduled tasks for load balancing which will not exceed tickFrequency
+	 * @param plugin the plugin in which tasks will be scheduled for
+	 * @param writer the player data writer that will be notified for each player during each scheduled execution
+	 * @param tickFrequency the frequency in server ticks that the given data writer will be notified for each player
+	 * @param maximumTasks the maximum amount of displaced scheduled tasks for load balancing which will not exceed tickFrequency
 	 * @throws IllegalArgumentException if tickFrequency or maximumTasks is less than 1
 	 */
 	public PlayerScheduler(Plugin plugin, PlayerDataWriter writer, int tickFrequency, int maximumTasks) throws IllegalArgumentException {
@@ -89,7 +88,7 @@ public class PlayerScheduler {
 	 * {@link PlayerDataWriter#writeData(Player)} for the player.<br>
 	 * If a player identified by the given ID is not online during scheduled execution,
 	 * the playerId will be removed from this scheduler.
-	 * @param playerId - The UUID of the player to add to this scheduler
+	 * @param playerId the UUID of the player to add to this scheduler
 	 * @return <code>true</code> if this scheduler did not already contain the given playerId
 	 */
 	public synchronized boolean addPlayer(UUID playerId) {
@@ -112,7 +111,7 @@ public class PlayerScheduler {
 	/**
 	 * Remove a player from this scheduler to stop scheduled executions of
 	 * {@link PlayerDataWriter#writeData(Player)} for the player.
-	 * @param playerId - The UUID of the player to remove from this scheduler
+	 * @param playerId the UUID of the player to remove from this scheduler
 	 * @return <code>true</code> if this scheduler contained the given playerId
 	 */
 	public synchronized boolean removePlayer(UUID playerId) {
@@ -217,7 +216,7 @@ public class PlayerScheduler {
 		
 		/**
 		 * Called for a single player in a {@link PlayerScheduler} partitioned task
-		 * @param player - The player to write and/or process data for
+		 * @param player the player to write and/or process data for
 		 */
 		void writeData(Player player);
 		

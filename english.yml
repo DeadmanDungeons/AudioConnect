@@ -18,7 +18,7 @@ failed:
   no-players-connected: '&cNo players are currently connected to the audio stream for this server'
   player-not-connected: '&c<player-name> is not connected to the audio stream for this server'
   client-disconnected: '&cThis server is currently disconnected from AudioConnect'
-  audio-not-uploaded: 'An audio file with this ID has not been uploaded to your account'
+  audio-not-added: 'An audio file with this ID has not been added to your account'
   invalid-audio-id: "&cInvalid audio ID '<audio-id>': <reason>"
   invalid-track-id: "&cInvalid track ID '<track-id>': <reason>"
   invalid-delay-range: '&cThe audio delay <delay-range> is invalid. Valid formats are ''\<min\>-\<max\>'' or ''\<constant\>'''

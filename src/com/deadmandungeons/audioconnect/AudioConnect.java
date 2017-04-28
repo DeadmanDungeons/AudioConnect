@@ -46,7 +46,11 @@ import com.sk89q.worldguard.protection.flags.SetFlag;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 
-
+/**
+ * The main plugin class.<br>
+ * The instance of this class can be obtained by {@link #getInstance()}
+ * @author Jon
+ */
 public final class AudioConnect extends DeadmanPlugin {
 	
 	private static final String TRACKING_METADATA = "audio-tracking-data";
@@ -64,6 +68,9 @@ public final class AudioConnect extends DeadmanPlugin {
 	
 	private AudioConnectClient client;
 	
+	/**
+	 * @return the AudioConnect plugin instance
+	 */
 	public static AudioConnect getInstance() {
 		return getDeadmanPlugin(AudioConnect.class);
 	}
@@ -100,22 +107,38 @@ public final class AudioConnect extends DeadmanPlugin {
 	}
 	
 	
+	/**
+	 * @return the AudioConnectConfig instance containing parsed plugin configuration values
+	 */
 	public AudioConnectConfig getConfiguration() {
 		return config;
 	}
 	
+	/**
+	 * @return the AudioList instance containing the available audio IDs for the configured account
+	 */
 	public AudioList getAudioList() {
 		return audioList;
 	}
 	
+	/**
+	 * @return the AudioConnectClient instance responsible for interfacing with the configured AudioConnect server
+	 */
 	public AudioConnectClient getClient() {
 		return client;
 	}
 	
+	/**
+	 * @return the Messenger instance responsible for obtaining and sending plugin messages to the user
+	 */
 	public Messenger getMessenger() {
 		return messenger;
 	}
 	
+	/**
+	 * @param playerId the UUID of the player to obtain the connect URL for
+	 * @return the web client URL to connect as the player with the given UUID
+	 */
 	public String getPlayerConnectUrl(UUID playerId) {
 		String webappUrl = config.getConnectionWebappUrl().toString();
 		String serverId = ConnectUtils.encodeUuidBase64(config.getConnectionServerId());

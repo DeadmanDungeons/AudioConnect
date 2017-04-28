@@ -26,10 +26,16 @@ public class PlayerAudioStatusEvent extends Event {
 		this.status = status;
 	}
 	
+	/**
+	 * @return the player involved in this event who may or may not be online
+	 */
 	public OfflinePlayer getPlayer() {
 		return player;
 	}
 	
+	/**
+	 * @return the new connection status for the player involved in this event
+	 */
 	public Status getStatus() {
 		return status;
 	}

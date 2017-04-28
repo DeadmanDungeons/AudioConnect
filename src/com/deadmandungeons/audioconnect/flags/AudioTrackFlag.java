@@ -36,8 +36,8 @@ public class AudioTrackFlag extends Flag<AudioTrack> {
 		String trackId = null;
 		DayTime dayTime = null;
 		String[] properties = input.split(":");
-		if (properties.length == 1 && !properties[0].startsWith("audio=")) {
-			properties[0] = "audio=" + properties[0];
+		if (properties.length == 1 && !properties[0].startsWith("id=")) {
+			properties[0] = "id=" + properties[0];
 		}
 		for (String property : properties) {
 			String[] keyValuePair = property.split("=");
@@ -45,7 +45,7 @@ public class AudioTrackFlag extends Flag<AudioTrack> {
 				throw new InvalidFlagFormat("AudioTrack properties must be in the format <key>=<value>");
 			}
 			String key = keyValuePair[0], value = keyValuePair[1];
-			if (audioId == null && key.equals("audio")) {
+			if (audioId == null && key.equals("id")) {
 				audioId = value;
 				Result<String> audioIdValidation = AudioMessage.validateIdentifier(audioId);
 				if (!audioIdValidation.isSuccess()) {
@@ -53,7 +53,7 @@ public class AudioTrackFlag extends Flag<AudioTrack> {
 					throw new InvalidFlagFormat(msg);
 				}
 				if (plugin.getClient().isConnected() && (plugin.getAudioList().isEmpty() || !plugin.getAudioList().contains(audioId))) {
-					String reason = plugin.getMessenger().getMessage("failed.audio-not-uploaded", false);
+					String reason = plugin.getMessenger().getMessage("failed.audio-not-added", false);
 					String msg = plugin.getMessenger().getMessage("failed.invalid-audio-id", false, audioId, reason);
 					throw new InvalidFlagFormat(msg);
 				}
