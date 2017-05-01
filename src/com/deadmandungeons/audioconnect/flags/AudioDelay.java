@@ -6,16 +6,16 @@ import com.deadmandungeons.audioconnect.messages.AudioMessage.Range;
 
 public class AudioDelay {
 	
-	private final Range delayRange;
+	private final Range delayTime;
 	private final String trackId;
 	
-	AudioDelay(Range delayRange, String trackId) {
-		this.delayRange = delayRange;
+	AudioDelay(Range delayTime, String trackId) {
+		this.delayTime = delayTime;
 		this.trackId = trackId;
 	}
 	
-	public Range getDelayRange() {
-		return delayRange;
+	public Range getDelayTime() {
+		return delayTime;
 	}
 	
 	@Nullable
@@ -25,7 +25,7 @@ public class AudioDelay {
 	
 	@Override
 	public String toString() {
-		String str = delayRange.toString();
+		String str = delayTime.toString();
 		if (trackId != null) {
 			str += " (track: " + trackId + ")";
 		}

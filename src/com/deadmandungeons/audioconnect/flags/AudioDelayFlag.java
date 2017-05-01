@@ -30,11 +30,11 @@ public class AudioDelayFlag extends Flag<AudioDelay> {
 	public AudioDelay parseInput(FlagContext context) throws InvalidFlagFormat {
 		String input = stringFlag.parseInput(context);
 		
-		Range delayRange = null;
+		Range delayTime = null;
 		String trackId = null;
 		String[] properties = input.split(":");
-		if (properties.length == 1 && !properties[0].startsWith("range=")) {
-			properties[0] = "range=" + properties[0];
+		if (properties.length == 1 && !properties[0].startsWith("time=")) {
+			properties[0] = "time=" + properties[0];
 		}
 		for (String property : properties) {
 			String[] keyValuePair = property.split("=");
@@ -42,9 +42,9 @@ public class AudioDelayFlag extends Flag<AudioDelay> {
 				throw new InvalidFlagFormat("AudioDelay properties must be in the format <key>=<value>");
 			}
 			String key = keyValuePair[0], value = keyValuePair[1];
-			if (delayRange == null && key.equals("range")) {
-				delayRange = Range.parse(value);
-				if (delayRange == null) {
+			if (delayTime == null && key.equals("time")) {
+				delayTime = Range.parse(value);
+				if (delayTime == null) {
 					throw new InvalidFlagFormat(plugin.getMessenger().getMessage("failed.invalid-delay-range", true, value));
 				}
 			} else if (trackId == null && key.equals("track")) {
@@ -57,11 +57,11 @@ public class AudioDelayFlag extends Flag<AudioDelay> {
 				throw new InvalidFlagFormat("Duplicate or unkown AudioDelay property '" + key + "'");
 			}
 		}
-		if (delayRange == null) {
-			throw new InvalidFlagFormat("AudioDelay is missing required 'range' property");
+		if (delayTime == null) {
+			throw new InvalidFlagFormat("AudioDelay is missing required 'time' property");
 		}
 		
-		return new AudioDelay(delayRange, trackId);
+		return new AudioDelay(delayTime, trackId);
 	}
 	
 	@Override
@@ -69,9 +69,9 @@ public class AudioDelayFlag extends Flag<AudioDelay> {
 		if (object instanceof Map<?, ?>) {
 			Map<?, ?> map = (Map<?, ?>) object;
 			
-			Range delayRange;
-			String rawDelayRange = stringFlag.unmarshal(map.get("range"));
-			if (rawDelayRange == null || (delayRange = Range.parse(rawDelayRange)) == null) {
+			Range delayTime;
+			String rawDelayTime = stringFlag.unmarshal(map.get("range"));
+			if (rawDelayTime == null || (delayTime = Range.parse(rawDelayTime)) == null) {
 				return null;
 			}
 			
@@ -80,7 +80,7 @@ public class AudioDelayFlag extends Flag<AudioDelay> {
 				return null;
 			}
 			
-			return new AudioDelay(delayRange, trackId);
+			return new AudioDelay(delayTime, trackId);
 		}
 		return null;
 	}
@@ -88,7 +88,7 @@ public class AudioDelayFlag extends Flag<AudioDelay> {
 	@Override
 	public Object marshal(AudioDelay audioDelay) {
 		Map<String, Object> properties = new HashMap<>();
-		properties.put("range", audioDelay.getDelayRange().toString());
+		properties.put("range", audioDelay.getDelayTime().toString());
 		if (audioDelay.getTrackId() != null) {
 			properties.put("track", audioDelay.getTrackId());
 		}

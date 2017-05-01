@@ -61,7 +61,7 @@ public final class AudioConnect extends DeadmanPlugin {
 	private final AudioList audioList = new AudioList(getLogger());
 	
 	private final SetFlag<AudioTrack> audioFlag = new SetFlag<>("audio", new AudioTrackFlag(null));
-	private final AudioDelayFlag audioDelayFlag = new AudioDelayFlag("audio-delay");
+	private final SetFlag<AudioDelay> audioDelayFlag = new SetFlag<>("audio-delay", new AudioDelayFlag(null));
 	
 	private Messenger messenger;
 	private WorldGuardPlugin worldGuard;
@@ -82,6 +82,15 @@ public final class AudioConnect extends DeadmanPlugin {
 		messenger = new Messenger(this, langFile);
 		
 		worldGuard = (WorldGuardPlugin) Bukkit.getPluginManager().getPlugin("WorldGuard");
+		try {
+			worldGuard.getClass().getMethod("getFlagRegistry");
+		} catch (NoSuchMethodException e) {
+			String version = worldGuard.getDescription().getVersion();
+			getLogger().severe("AudioConnect is incompatible with the installed WorldGuard version '" + version
+					+ "'. Please update WorldGuard to v6.2 or higher");
+			return;
+		}
+		
 		worldGuard.getFlagRegistry().register(audioFlag);
 		worldGuard.getFlagRegistry().register(audioDelayFlag);
 	}
@@ -252,8 +261,8 @@ public final class AudioConnect extends DeadmanPlugin {
 					}
 				}
 				
-				AudioDelay audioDelay = region.getFlag(audioDelayFlag);
-				if (audioDelay != null && region.getPriority() >= audioDelayPriority) {
+				Set<AudioDelay> audioDelays = region.getFlag(audioDelayFlag);
+				if (audioDelays != null && region.getPriority() >= audioDelayPriority) {
 					if (region.getPriority() > audioDelayPriority) {
 						audioDelayPriority = region.getPriority();
 						if (audioDelayByTrack != null) {
@@ -264,8 +273,9 @@ public final class AudioConnect extends DeadmanPlugin {
 					if (audioDelayByTrack == null) {
 						audioDelayByTrack = new HashMap<>();
 					}
-					
-					audioDelayByTrack.put(audioDelay.getTrackId(), audioDelay.getDelayRange());
+					for (AudioDelay audioDelay : audioDelays) {
+						audioDelayByTrack.put(audioDelay.getTrackId(), audioDelay.getDelayTime());
+					}
 				}
 			}
 			
