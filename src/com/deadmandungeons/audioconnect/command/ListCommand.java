@@ -37,7 +37,7 @@ import com.deadmandungeons.deadmanplugin.command.SubCommandInfo;
 				@ArgumentInfo(argName = "audio", argType = ArgType.NON_VARIABLE),
 				@ArgumentInfo(argName = "page", argType = ArgType.OPT_VARIABLE, varType = Integer.class)
 			},
-			description = "List all the available audio IDs for files that have been uploaded to your account"
+			description = "List all the available audio IDs for files that have been added to your account"
 		)
 	}
 )//@formatter:on

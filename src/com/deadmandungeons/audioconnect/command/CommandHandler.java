@@ -56,7 +56,8 @@ public class CommandHandler extends DeadmanExecutor {
 	// @formatter:off
 	@CommandInfo(
 		name = "Mute",
-		description = "Mute the currently playing audio in your AudioConnect session",
+		permissions = {"audioconnect.user.mute"},
+		description = "Mute all currently playing audio in your audio stream for this server",
 		inGameOnly = true
 	)// @formatter:on
 	private class MuteCommand implements Command {
@@ -73,7 +74,8 @@ public class CommandHandler extends DeadmanExecutor {
 	// @formatter:off
 	@CommandInfo(
 		name = "Unmute",
-		description = "Unmute the currently muted audio in your AudioConnect session to the previous volume",
+		permissions = {"audioconnect.user.unmute"},
+		description = "Unmute the currently muted audio in your audio stream to the previous volume",
 		inGameOnly = true
 	)// @formatter:on
 	private class UnmuteCommand implements Command {

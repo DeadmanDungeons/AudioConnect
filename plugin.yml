@@ -8,6 +8,7 @@ depend: [DeadmanPlugin, WorldGuard]
 
 commands:
     ac:
+        aliases: [audioconnect]
         description: AudioConnect command prefix. Use "/ac help" to see all the AudioConnect commands you can use.
     audio:
         aliases: [music]
@@ -36,7 +37,7 @@ permissions:
             audioconnect.admin.all: true
     audioconnect.admin.all:
         default: op
-        description: Gives access to all AudioConnect setup permissions
+        description: Gives access to all AudioConnect admin permissions
         children:
             audioconnect.admin.verify: true
             audioconnect.admin.reload: true
@@ -61,7 +62,13 @@ permissions:
         children:
             audioconnect.user.register: true
             audioconnect.user.connect: true
+            audioconnect.user.mute: true
+            audioconnect.user.unmute: true
     audioconnect.user.register:
         description: Gives access to initiate the registration of an AudioConnect account
     audioconnect.user.connect:
         description: Gives access to retrieve connection URL
+    audioconnect.user.mute:
+        description: Gives access to mute all currently playing audio
+    audioconnect.user.unmute:
+        description: Gives access to unmute the currently muted audio

@@ -6,10 +6,11 @@
 # ------------------------------------------------------------ #
 
 # NOTICE:
-#  For more information and a step-by-step guide on how to setup
-#  and configure AudioConnect, refer to the quick and easy tutorial
-#  here (https://minecraftaudio.com/tutorial)
+#  For more information on how to setup and configure AudioConnect,
+#  refer to the wiki pages here (https://github.com/DeadmanDungeons/AudioConnect/wiki)
 
+
+# Configure settings for establishing a connection with the AudioConnect server
 connection:
   # The user-id of your AudioConnect account (Minecraft UUID/Username)
   user-id: ''
@@ -20,40 +21,67 @@ connection:
   # The ID for this server (Generated for each server added to your account)
   server-id: ''
 
-  # NOTICE: These values will most likely never need to be changed and probably shouln't (depending on use case)
+  # NOTICE: These values will most likely never need to be changed and probably shouln't
   endpoint:
-    # WARNING: If this is false, your user credentials will be transmitted in plain text
-    # The boolean flag indicating whether to use an SSL (secure) connection with the AudioConnect webserver endpoint
-    # If true (websocket protocol = wss, web protocol = https). If false: (websocket protocol = ws, web protocol = http)
+    # The boolean flag indicating whether to establish a secure (SSL/TLS)
+    # connection with the AudioConnect webserver endpoint.
+    # If true (websocket protocol = wss, web protocol = https)
+    # If false: (websocket protocol = ws, web protocol = http)
     secure: true
+
     # The host of the AudioConnect webserver
     host: minecraftaudio.com
+
     # The port of the AudioConnect websocket endpoint
     websocket-port: 3030
+
     # The path of the AudioConnect webapp endpoint
     webapp-path: /
 
-# Configure settings for reconnecting to the AudioConnect server in the event of an unexpected disconnect.
-# If the reason for the disconnect was because the server refused the conneciton, or if the client was manually
-# disconnected, the client will not attempt to reconnect.
+
+# Configure settings for reconnecting to the AudioConnect server in the
+# event of an unexpected disconnect.
+# If the reason for the disconnect was because the server refused the conneciton,
+# or if the client was manually disconnected, the client will not attempt to reconnect.
 reconnect:
   # The number of miliseconds to delay before attempting to reconnect
   interval: 3000
+
   # The maximum number of milliseconds to delay a reconnect attempt
   max-interval: 30000
-  # The rate of increase of the reconnect delay. Allows reconnect attempts to back off when problems persist
+
+  # The rate of increase of the reconnect delay.
+  # Allows reconnect attempts to back off when problems persist
   delay: 1.2
+
   # The maximum number of reconnect attempts that will be made before giving up. 
   # If -1, reconnect attempts will continue to be made forever.
   max-attempts: -1
 
+
+# Configure other various plugin options
 options:
-  # prevent a player from executing any AudioConnect command after this amount of time in seconds from the last executed command
+  # The Amount of time in seconds from the last executed command.
+  # Prevents a player from executing any AudioConnect command too quickly.
   command-cooldown: 5
-  # The frequency (in seconds) of audio connect announcement with connection URL for non-connected players. -1 for no announcements
+
+  # The frequency in secconds to send an announcement message the to non-connected players.
+  # The announcement message is defined in the language file at:
+  #   misc.announcement
+  #   misc.connect-details
+  # Use -1 to disabled announcements.
   announce-frequency: 2700
 
-# Define audio tracks and their settings to allow different audio types to be played independently from each other.
+
+# Define audio tracks and their settings.
+# Audio Tracks enable layering of audio to be played independently from each other.
+# They are also useful for configuring how different audio types are played.
+# Audio tracks and their settings are defined like:
+# <track-name>
+#   default: <true|false>
+#   repeating: <true|false>
+#   random: <true|false>
+#   fading: <true|false>
 audio-tracks:
   primary:
     default: true
@@ -68,8 +96,3 @@ audio-tracks:
     repeating: false
     random: false
     fading: false
-# <track-name>
-#   default: <true|false>
-#   repeating: <true|false>
-#   random: <true|false>
-#   fading: <true|false>

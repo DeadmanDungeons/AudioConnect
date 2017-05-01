@@ -12,7 +12,7 @@ import com.deadmandungeons.deadmanplugin.command.CommandInfo;
 @CommandInfo(
 	name = "Connect",
 	permissions = {"audioconnect.user.connect"},
-	description = "Get the connection URL for your dynamic audio stream on this server",
+	description = "Get the connection URL to your dynamic audio stream for this server",
 	inGameOnly = true
 )//@formatter:on
 public class ConnectCommand implements Command {

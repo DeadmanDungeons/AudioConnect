@@ -41,9 +41,9 @@ import com.google.common.net.HttpHeaders;
 	subCommands = {
 		@SubCommandInfo(
 			arguments = {
-				@ArgumentInfo(argName = "address", argType = ArgType.VARIABLE)
+				@ArgumentInfo(argName = "server-address", argType = ArgType.VARIABLE)
 			},
-			description = "verify the public address of this server with your account at <connection.endpoint.host>"
+			description = "Verify the public address of this server with your account at <connection.endpoint.host>"
 		)
 	}
 )//@formatter:on
