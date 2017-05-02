@@ -1,5 +1,7 @@
 package com.deadmandungeons.audioconnect;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -13,6 +15,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.logging.Level;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringUtils;
@@ -42,6 +45,8 @@ import com.deadmandungeons.deadmanplugin.filedata.PluginFile;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.bukkit.util.Locations;
 import com.sk89q.worldguard.protection.ApplicableRegionSet;
+import com.sk89q.worldguard.protection.flags.DefaultFlag;
+import com.sk89q.worldguard.protection.flags.Flag;
 import com.sk89q.worldguard.protection.flags.SetFlag;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
@@ -60,11 +65,10 @@ public final class AudioConnect extends DeadmanPlugin {
 	private final Config config = new Config();
 	private final AudioList audioList = new AudioList(getLogger());
 	
-	private final SetFlag<AudioTrack> audioFlag = new SetFlag<>("audio", new AudioTrackFlag(null));
-	private final SetFlag<AudioDelay> audioDelayFlag = new SetFlag<>("audio-delay", new AudioDelayFlag(null));
-	
 	private Messenger messenger;
 	private WorldGuardPlugin worldGuard;
+	private SetFlag<AudioTrack> audioFlag;
+	private SetFlag<AudioDelay> audioDelayFlag;
 	
 	private AudioConnectClient client;
 	
@@ -77,22 +81,47 @@ public final class AudioConnect extends DeadmanPlugin {
 	
 	
 	@Override
-	protected void onPluginLoad() throws Exception {
+	protected void onPluginLoad() {
 		PluginFile langFile = PluginFile.creator(this, LANG_DIRECTORY + "english.yml").defaultFile("english.yml").create();
 		messenger = new Messenger(this, langFile);
 		
 		worldGuard = (WorldGuardPlugin) Bukkit.getPluginManager().getPlugin("WorldGuard");
 		try {
 			worldGuard.getClass().getMethod("getFlagRegistry");
+			
+			// WorldGuard version is 6.2 or above
+			audioFlag = new SetFlag<>("audio", AudioTrackFlag.create());
+			audioDelayFlag = new SetFlag<>("audio-delay", AudioDelayFlag.create());
+			
+			worldGuard.getFlagRegistry().register(audioFlag);
+			worldGuard.getFlagRegistry().register(audioDelayFlag);
 		} catch (NoSuchMethodException e) {
 			String version = worldGuard.getDescription().getVersion();
-			getLogger().severe("AudioConnect is incompatible with the installed WorldGuard version '" + version
-					+ "'. Please update WorldGuard to v6.2 or higher");
-			return;
+			getLogger().info("Detected an older version of WorldGuard (" + version + "). Attempting to make AudioConnect compatible...");
+			
+			audioFlag = new SetFlag<>("audio", AudioTrackFlag.createLegacy());
+			audioDelayFlag = new SetFlag<>("audio-delay", AudioDelayFlag.createLegacy());
+			
+			try {
+				Flag<?>[] flagsList = DefaultFlag.flagsList;
+				
+				Field flagsListField = DefaultFlag.class.getField("flagsList");
+				Field modifiersField = Field.class.getDeclaredField("modifiers");
+				modifiersField.setAccessible(true);
+				modifiersField.setInt(flagsListField, flagsListField.getModifiers() & ~Modifier.FINAL);
+				
+				Flag<?>[] newFlagsList = new Flag<?>[flagsList.length + 2];
+				System.arraycopy(flagsList, 0, newFlagsList, 0, flagsList.length);
+				newFlagsList[flagsList.length] = audioFlag;
+				newFlagsList[flagsList.length + 1] = audioDelayFlag;
+				
+				flagsListField.set(null, newFlagsList);
+				
+				getLogger().info("Successfully adjusted for compatibility with the current WorldGuard version");
+			} catch (Exception e2) {
+				getLogger().log(Level.SEVERE, "Failed to inject audio flags into WorldGuard. Consider upgrading WorldGuard to v6.2 or higher", e2);
+			}
 		}
-		
-		worldGuard.getFlagRegistry().register(audioFlag);
-		worldGuard.getFlagRegistry().register(audioDelayFlag);
 	}
 	
 	@Override
@@ -375,6 +404,7 @@ public final class AudioConnect extends DeadmanPlugin {
 		private final ConfigEntry<Boolean> connectionSecure = entry(Boolean.class, "connection.endpoint.secure");
 		private final ConfigEntry<String> connectionHost = entry(String.class, "connection.endpoint.host");
 		private final ConfigEntry<Number> connectionWebsocketPort = entry(Number.class, "connection.endpoint.websocket-port");
+		private final ConfigEntry<Number> connectionWebappPort = entry(Number.class, "connection.endpoint.webapp-port");
 		private final ConfigEntry<String> connectionWebappPath = entry(String.class, "connection.endpoint.webapp-path");
 		private final ConfigEntry<Number> reconnectInterval = entry(Number.class, "reconnect.interval");
 		private final ConfigEntry<Number> reconnectMaxInterval = entry(Number.class, "reconnect.max-interval");
@@ -462,7 +492,7 @@ public final class AudioConnect extends DeadmanPlugin {
 		@Override
 		public synchronized URL getConnectionWebappUrl() {
 			if (webappUrl == null) {
-				webappUrl = createWebappUrl(connectionSecure, connectionHost, connectionWebappPath);
+				webappUrl = createWebappUrl(connectionSecure, connectionHost, connectionWebappPort, connectionWebappPath);
 			}
 			return webappUrl;
 		}
@@ -480,6 +510,11 @@ public final class AudioConnect extends DeadmanPlugin {
 		@Override
 		public synchronized int getConnectionWebsocketPort() {
 			return connectionWebsocketPort.value().intValue();
+		}
+		
+		@Override
+		public int getConnectionWebappPort() {
+			return connectionWebappPort.value().intValue();
 		}
 		
 		@Override
@@ -538,14 +573,17 @@ public final class AudioConnect extends DeadmanPlugin {
 			}
 		}
 		
-		private static URL createWebappUrl(ConfigEntry<Boolean> secure, ConfigEntry<String> host, ConfigEntry<String> path) {
+		private static URL createWebappUrl(ConfigEntry<Boolean> secure, ConfigEntry<String> host, ConfigEntry<Number> port,
+				ConfigEntry<String> path) {
 			try {
+				int validPort = (port.value().intValue() != 80 ? port.value().intValue() : -1);
 				String validPath = path.value().replaceAll("^([^/])", "/$1").replaceAll("/$", "");
-				return createUri((secure.value() ? "https" : "http"), host.value(), -1, validPath).toURL();
+				return createUri((secure.value() ? "https" : "http"), host.value(), validPort, validPath).toURL();
 			} catch (MalformedURLException | URISyntaxException e1) {
 				try {
+					int validPort = (port.defaultValue().intValue() != 80 ? port.defaultValue().intValue() : -1);
 					String validPath = path.defaultValue().replaceAll("^([^/])", "/$1").replaceAll("/$", "");
-					URL url = createUri((secure.defaultValue() ? "https" : "http"), host.defaultValue(), -1, validPath).toURL();
+					URL url = createUri((secure.defaultValue() ? "https" : "http"), host.defaultValue(), validPort, validPath).toURL();
 					getInstance().getLogger().warning("Invalid host syntax at " + host.getPath() + " in config. Using default URL " + url);
 					return url;
 				} catch (MalformedURLException | URISyntaxException e2) {

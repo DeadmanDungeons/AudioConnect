@@ -7,31 +7,49 @@ import org.apache.commons.lang.StringUtils;
 
 import com.deadmandungeons.audioconnect.AudioConnect;
 import com.deadmandungeons.audioconnect.flags.AudioTrack.DayTime;
+import com.deadmandungeons.audioconnect.flags.compat.FlagHandler;
+import com.deadmandungeons.audioconnect.flags.compat.LegacyFlag;
 import com.deadmandungeons.audioconnect.messages.AudioMessage;
 import com.deadmandungeons.connect.commons.Result;
 import com.sk89q.worldguard.protection.flags.Flag;
 import com.sk89q.worldguard.protection.flags.FlagContext;
 import com.sk89q.worldguard.protection.flags.InvalidFlagFormat;
-import com.sk89q.worldguard.protection.flags.RegionGroup;
 import com.sk89q.worldguard.protection.flags.StringFlag;
 
-public class AudioTrackFlag extends Flag<AudioTrack> {
+public class AudioTrackFlag extends Flag<AudioTrack> implements FlagHandler<AudioTrack> {
 	
 	private final AudioConnect plugin = AudioConnect.getInstance();
 	private final StringFlag stringFlag = new StringFlag(null);
 	
-	public AudioTrackFlag(String name, RegionGroup defaultGroup) {
-		super(name, defaultGroup);
-	}
-	
-	public AudioTrackFlag(String name) {
+	private AudioTrackFlag(String name) {
 		super(name);
 	}
 	
+	
+	public static Flag<AudioTrack> create() {
+		return create(null);
+	}
+	
+	public static Flag<AudioTrack> create(String name) {
+		return new AudioTrackFlag(name);
+	}
+	
+	public static Flag<AudioTrack> createLegacy() {
+		return createLegacy(null);
+	}
+	
+	public static Flag<AudioTrack> createLegacy(String name) {
+		return new LegacyFlag<>(new AudioTrackFlag(null), name);
+	}
+	
+	
 	@Override
 	public AudioTrack parseInput(FlagContext context) throws InvalidFlagFormat {
-		String input = stringFlag.parseInput(context);
-		
+		return parseInput(stringFlag.parseInput(context));
+	}
+	
+	@Override
+	public AudioTrack parseInput(String input) throws InvalidFlagFormat {
 		String audioId = null;
 		String trackId = null;
 		DayTime dayTime = null;
@@ -85,26 +103,32 @@ public class AudioTrackFlag extends Flag<AudioTrack> {
 		if (object instanceof Map<?, ?>) {
 			Map<?, ?> map = (Map<?, ?>) object;
 			
-			String audioId = stringFlag.unmarshal(map.get("audio"));
-			if (audioId == null || !AudioMessage.validateIdentifier(audioId).isSuccess()) {
+			String audioId;
+			Object rawAudioId = map.get("audio");
+			if (!(rawAudioId instanceof String) || !AudioMessage.validateIdentifier(audioId = (String) rawAudioId).isSuccess()) {
 				return null;
 			}
 			
-			String trackId = stringFlag.unmarshal(map.get("track"));
-			if (trackId != null && !AudioMessage.validateIdentifier(trackId).isSuccess()) {
-				return null;
+			String trackId = null;
+			Object rawTrackId = map.get("track");
+			if (rawTrackId != null) {
+				if (!(rawTrackId instanceof String) || !AudioMessage.validateIdentifier(trackId = (String) rawTrackId).isSuccess()) {
+					return null;
+				}
 			}
 			
 			DayTime dayTime = null;
-			String time = stringFlag.unmarshal(map.get("time"));
-			if (time != null && (dayTime = DayTime.byName(time)) == null) {
-				return null;
+			Object rawDayTime = map.get("time");
+			if (rawDayTime != null) {
+				if (!(rawDayTime instanceof String) || (dayTime = DayTime.byName((String) rawDayTime)) == null) {
+					return null;
+				}
 			}
 			
 			return new AudioTrack(audioId, trackId, dayTime);
 		} else {
-			String audioId = stringFlag.unmarshal(object);
-			if (audioId == null || !AudioMessage.validateIdentifier(audioId).isSuccess()) {
+			String audioId;
+			if (!(object instanceof String) || !AudioMessage.validateIdentifier(audioId = (String) object).isSuccess()) {
 				return null;
 			}
 			

@@ -4,32 +4,50 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.deadmandungeons.audioconnect.AudioConnect;
+import com.deadmandungeons.audioconnect.flags.compat.FlagHandler;
+import com.deadmandungeons.audioconnect.flags.compat.LegacyFlag;
 import com.deadmandungeons.audioconnect.messages.AudioMessage;
 import com.deadmandungeons.audioconnect.messages.AudioMessage.Range;
 import com.deadmandungeons.connect.commons.Result;
 import com.sk89q.worldguard.protection.flags.Flag;
 import com.sk89q.worldguard.protection.flags.FlagContext;
 import com.sk89q.worldguard.protection.flags.InvalidFlagFormat;
-import com.sk89q.worldguard.protection.flags.RegionGroup;
 import com.sk89q.worldguard.protection.flags.StringFlag;
 
-public class AudioDelayFlag extends Flag<AudioDelay> {
+public class AudioDelayFlag extends Flag<AudioDelay> implements FlagHandler<AudioDelay> {
 	
 	private final AudioConnect plugin = AudioConnect.getInstance();
 	private final StringFlag stringFlag = new StringFlag(null);
 	
-	public AudioDelayFlag(String name, RegionGroup defaultGroup) {
-		super(name, defaultGroup);
-	}
-	
-	public AudioDelayFlag(String name) {
+	private AudioDelayFlag(String name) {
 		super(name);
 	}
 	
+	
+	public static Flag<AudioDelay> create() {
+		return create(null);
+	}
+	
+	public static Flag<AudioDelay> create(String name) {
+		return new AudioDelayFlag(name);
+	}
+	
+	public static Flag<AudioDelay> createLegacy() {
+		return createLegacy(null);
+	}
+	
+	public static Flag<AudioDelay> createLegacy(String name) {
+		return new LegacyFlag<>(new AudioDelayFlag(null), name);
+	}
+	
+	
 	@Override
 	public AudioDelay parseInput(FlagContext context) throws InvalidFlagFormat {
-		String input = stringFlag.parseInput(context);
-		
+		return parseInput(stringFlag.parseInput(context));
+	}
+	
+	@Override
+	public AudioDelay parseInput(String input) throws InvalidFlagFormat {
 		Range delayTime = null;
 		String trackId = null;
 		String[] properties = input.split(":");
@@ -70,14 +88,18 @@ public class AudioDelayFlag extends Flag<AudioDelay> {
 			Map<?, ?> map = (Map<?, ?>) object;
 			
 			Range delayTime;
-			String rawDelayTime = stringFlag.unmarshal(map.get("range"));
-			if (rawDelayTime == null || (delayTime = Range.parse(rawDelayTime)) == null) {
+			Object rawDelayTime = map.get("range");
+			if (!(rawDelayTime instanceof String) || (delayTime = Range.parse((String) rawDelayTime)) == null) {
 				return null;
 			}
 			
-			String trackId = stringFlag.unmarshal(map.get("track"));
-			if (trackId != null && !AudioMessage.validateIdentifier(trackId).isSuccess()) {
-				return null;
+			String trackId = null;
+			Object rawTrackId = map.get("track");
+			if (rawTrackId != null) {
+				if (!(rawTrackId instanceof String) || !AudioMessage.validateIdentifier((String) rawTrackId).isSuccess()) {
+					return null;
+				}
+				trackId = (String) rawTrackId;
 			}
 			
 			return new AudioDelay(delayTime, trackId);

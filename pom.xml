@@ -83,6 +83,12 @@
 		
 		<dependency>
 			<groupId>com.deadmandungeons</groupId>
+			<artifactId>audio-connect-compat</artifactId>
+			<version>1.0.0</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>com.deadmandungeons</groupId>
 			<artifactId>deadman-plugin</artifactId>
 			<version>1.8.11</version>
 			<scope>provided</scope>
@@ -91,7 +97,7 @@
 		<dependency>
 			<groupId>org.bukkit</groupId>
 			<artifactId>bukkit</artifactId>
-			<version>1.9.4-R0.1-SNAPSHOT</version>
+			<version>1.8-R0.1-SNAPSHOT</version>
 			<scope>provided</scope>
 		</dependency>
 		
