@@ -18,6 +18,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.server.ServerListPingEvent;
 
@@ -89,7 +90,7 @@ public class VerifyCommand implements Command, Listener {
 	}
 	
 	
-	@EventHandler
+	@EventHandler(priority = EventPriority.HIGHEST)
 	private void onServerPing(ServerListPingEvent event) {
 		String encodedVerifyCode;
 		if (activeVerifyTask != null && (encodedVerifyCode = activeVerifyTask.encodedVerifyCode) != null) {
