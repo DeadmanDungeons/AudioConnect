@@ -25,11 +25,11 @@ failed:
   verify-invalid-config: '&4Invalid Config: &cThe AudioConnect account and server information must be configured'
   verify-invalid-address: '&cInvalid address syntax'
   verify-in-progress: '&cA verify request is already in progress'
-  verify-response-401: '&4The verify request was rejected: &cThe configured account credentials are invalid'
-  verify-response-404: '&4The verify request was rejected: &cYour account does not have a server with the configured server-id'
+  verify-response-401: '&4The verify request was rejected: &cThe configured account credentials are invalid. Please check that your user-id and password in config.yml are correct.'
+  verify-response-404: '&4The verify request was rejected: &cYour account does not have a server with the configured server-id. Please check that the connection values in config.yml are correct.'
   verify-response-409: '&4The verify request was rejected: &cThe given address has already been verified for a different server'
   verify-response: '&4The verify request was rejected: &cUnexpected reason (<code>)'
-  verify-invalid: '&cThe provided address did not verify as the public address for this server'
+  verify-invalid: '&cThe provided address did not verify as the public address for this server. Please make sure the address points to this server and is publicly accessible'
   verify-error: '&cAn unexpected error occured while contacting AudioConnect server'
 
 succeeded:
