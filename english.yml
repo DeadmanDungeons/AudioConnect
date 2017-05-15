@@ -50,6 +50,6 @@ misc:
   connect-details: |
       &7Click this URL to listen:
         
-        &6<connect-url>
+      &6<connect-url>
   top-bar: '&8\<&m                             &r&6 Audio Connect &8&m                             &r&8\>'
   bottom-bar: '&8\<&m                                                                             &r&8\>'

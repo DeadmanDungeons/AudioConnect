@@ -3,6 +3,7 @@ package com.deadmandungeons.audioconnect.command;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.PluginCommand;
 import org.bukkit.entity.Player;
 
 import com.deadmandungeons.audioconnect.AudioConnect;
@@ -17,6 +18,9 @@ import com.deadmandungeons.deadmanplugin.command.DeadmanExecutor;
 public class CommandHandler extends DeadmanExecutor {
 	
 	private final AudioConnect plugin;
+	private final PluginCommand audioCommand;
+	private final PluginCommand muteCommand;
+	private final PluginCommand unmuteCommand;
 	
 	public CommandHandler(AudioConnect plugin, Messenger messenger, int commandCooldown) {
 		super(plugin, messenger, commandCooldown);
@@ -33,9 +37,14 @@ public class CommandHandler extends DeadmanExecutor {
 		registerCommand(new UnmuteCommand());
 		
 		CommandExecutor aliasExecutor = new AliasCommandExecutor();
-		plugin.getCommand("audio").setExecutor(aliasExecutor);
-		plugin.getCommand("mute").setExecutor(aliasExecutor);
-		plugin.getCommand("unmute").setExecutor(aliasExecutor);
+		audioCommand = plugin.getCommand("audio");
+		audioCommand.setExecutor(aliasExecutor);
+		
+		muteCommand = plugin.getCommand("mute");
+		muteCommand.setExecutor(aliasExecutor);
+		
+		unmuteCommand = plugin.getCommand("unmute");
+		unmuteCommand.setExecutor(aliasExecutor);
 	}
 	
 	
@@ -99,11 +108,11 @@ public class CommandHandler extends DeadmanExecutor {
 			}
 			
 			Player player = (Player) sender;
-			if (label.equalsIgnoreCase("audio")) {
+			if (command.equals(audioCommand)) {
 				return getCommand(ConnectCommand.class).execute(player);
-			} else if (label.equalsIgnoreCase("mute")) {
+			} else if (command.equals(muteCommand)) {
 				return controlVolume(player, true);
-			} else if (label.equalsIgnoreCase("unmute")) {
+			} else if (command.equals(unmuteCommand)) {
 				return controlVolume(player, false);
 			}
 			return false;
