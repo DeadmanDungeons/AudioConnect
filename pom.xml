@@ -7,17 +7,7 @@
     <name>AudioConnect</name>
 
     <build>
-        <sourceDirectory>src</sourceDirectory>
         <finalName>AudioConnect</finalName>
-
-        <resources>
-            <resource>
-                <directory>${basedir}</directory>
-                <includes>
-                    <include>*.yml</include>
-                </includes>
-            </resource>
-        </resources>
 
         <plugins>
             <plugin>
