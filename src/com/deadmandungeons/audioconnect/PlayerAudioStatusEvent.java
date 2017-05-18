@@ -1,10 +1,9 @@
 package com.deadmandungeons.audioconnect;
 
+import com.deadmandungeons.connect.commons.StatusMessage.Status;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
-
-import com.deadmandungeons.connect.commons.StatusMessage.Status;
 
 /**
  * Called when the connection status for a player between the web client, Minecraft client,
@@ -15,38 +14,38 @@ import com.deadmandungeons.connect.commons.StatusMessage.Status;
  * @author Jon
  */
 public class PlayerAudioStatusEvent extends Event {
-	
-	private static final HandlerList handlers = new HandlerList();
-	
-	private final OfflinePlayer player;
-	private final Status status;
-	
-	public PlayerAudioStatusEvent(OfflinePlayer player, Status status) {
-		this.player = player;
-		this.status = status;
-	}
-	
-	/**
-	 * @return the player involved in this event who may or may not be online
-	 */
-	public OfflinePlayer getPlayer() {
-		return player;
-	}
-	
-	/**
-	 * @return the new connection status for the player involved in this event
-	 */
-	public Status getStatus() {
-		return status;
-	}
-	
-	@Override
-	public HandlerList getHandlers() {
-		return handlers;
-	}
-	
-	public static HandlerList getHandlerList() {
-		return handlers;
-	}
-	
+
+    private static final HandlerList handlers = new HandlerList();
+
+    private final OfflinePlayer player;
+    private final Status status;
+
+    public PlayerAudioStatusEvent(OfflinePlayer player, Status status) {
+        this.player = player;
+        this.status = status;
+    }
+
+    /**
+     * @return the player involved in this event who may or may not be online
+     */
+    public OfflinePlayer getPlayer() {
+        return player;
+    }
+
+    /**
+     * @return the new connection status for the player involved in this event
+     */
+    public Status getStatus() {
+        return status;
+    }
+
+    @Override
+    public HandlerList getHandlers() {
+        return handlers;
+    }
+
+    public static HandlerList getHandlerList() {
+        return handlers;
+    }
+
 }
