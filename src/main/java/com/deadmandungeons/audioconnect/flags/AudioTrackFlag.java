@@ -5,7 +5,7 @@ import com.deadmandungeons.audioconnect.flags.AudioTrack.DayTime;
 import com.deadmandungeons.audioconnect.flags.compat.FlagHandler;
 import com.deadmandungeons.audioconnect.flags.compat.LegacyFlag;
 import com.deadmandungeons.audioconnect.messages.AudioMessage;
-import com.deadmandungeons.connect.commons.Result;
+import com.deadmandungeons.audioconnect.messages.AudioMessage.IdentifierSyntaxException;
 import com.sk89q.worldguard.protection.flags.Flag;
 import com.sk89q.worldguard.protection.flags.FlagContext;
 import com.sk89q.worldguard.protection.flags.InvalidFlagFormat;
@@ -20,25 +20,12 @@ public class AudioTrackFlag extends Flag<AudioTrack> implements FlagHandler<Audi
     private final AudioConnect plugin = AudioConnect.getInstance();
     private final StringFlag stringFlag = new StringFlag(null);
 
-    private AudioTrackFlag(String name) {
-        super(name);
-    }
-
-
-    public static Flag<AudioTrack> create() {
-        return create(null);
-    }
-
-    public static Flag<AudioTrack> create(String name) {
-        return new AudioTrackFlag(name);
+    public AudioTrackFlag() {
+        super(null);
     }
 
     public static Flag<AudioTrack> createLegacy() {
-        return createLegacy(null);
-    }
-
-    public static Flag<AudioTrack> createLegacy(String name) {
-        return new LegacyFlag<>(new AudioTrackFlag(null), name);
+        return new LegacyFlag<>(new AudioTrackFlag(), null);
     }
 
 
@@ -64,9 +51,10 @@ public class AudioTrackFlag extends Flag<AudioTrack> implements FlagHandler<Audi
             String key = keyValuePair[0], value = keyValuePair[1];
             if (audioId == null && key.equals("id")) {
                 audioId = value;
-                Result<String> audioIdValidation = AudioMessage.validateIdentifier(audioId);
-                if (!audioIdValidation.isSuccess()) {
-                    String msg = plugin.getMessenger().getMessage("failed.invalid-audio-id", false, trackId, audioIdValidation.getFailReason());
+                try {
+                    AudioMessage.validateIdentifier(audioId);
+                } catch (IdentifierSyntaxException e) {
+                    String msg = plugin.getMessenger().getMessage("failed.invalid-audio-id", false, audioId, e.getMessage());
                     throw new InvalidFlagFormat(msg);
                 }
                 if (plugin.getClient().isConnected() && (plugin.getAudioList().isEmpty() || !plugin.getAudioList().contains(audioId))) {
@@ -76,9 +64,10 @@ public class AudioTrackFlag extends Flag<AudioTrack> implements FlagHandler<Audi
                 }
             } else if (trackId == null && key.equals("track")) {
                 trackId = value;
-                Result<String> trackIdValidation = AudioMessage.validateIdentifier(trackId);
-                if (!trackIdValidation.isSuccess()) {
-                    String msg = plugin.getMessenger().getMessage("failed.invalid-track-id", false, trackId, trackIdValidation.getFailReason());
+                try {
+                    AudioMessage.validateIdentifier(trackId);
+                } catch (IdentifierSyntaxException e) {
+                    String msg = plugin.getMessenger().getMessage("failed.invalid-track-id", false, trackId, e.getMessage());
                     throw new InvalidFlagFormat(msg);
                 }
             } else if (dayTime == null && key.equals("time")) {
@@ -99,39 +88,47 @@ public class AudioTrackFlag extends Flag<AudioTrack> implements FlagHandler<Audi
 
     @Override
     public AudioTrack unmarshal(Object object) {
-        if (object instanceof Map<?, ?>) {
-            Map<?, ?> map = (Map<?, ?>) object;
+        try {
+            if (object instanceof Map<?, ?>) {
+                Map<?, ?> map = (Map<?, ?>) object;
 
-            String audioId;
-            Object rawAudioId = map.get("audio");
-            if (!(rawAudioId instanceof String) || !AudioMessage.validateIdentifier(audioId = (String) rawAudioId).isSuccess()) {
-                return null;
-            }
-
-            String trackId = null;
-            Object rawTrackId = map.get("track");
-            if (rawTrackId != null) {
-                if (!(rawTrackId instanceof String) || !AudioMessage.validateIdentifier(trackId = (String) rawTrackId).isSuccess()) {
+                Object rawAudioId = map.get("audio");
+                if (!(rawAudioId instanceof String)) {
                     return null;
                 }
-            }
+                String audioId = (String) rawAudioId;
+                AudioMessage.validateIdentifier(audioId);
 
-            DayTime dayTime = null;
-            Object rawDayTime = map.get("time");
-            if (rawDayTime != null) {
-                if (!(rawDayTime instanceof String) || (dayTime = DayTime.byName((String) rawDayTime)) == null) {
+                String trackId = null;
+                Object rawTrackId = map.get("track");
+                if (rawTrackId != null) {
+                    if (!(rawTrackId instanceof String)) {
+                        return null;
+                    }
+                    trackId = (String) rawTrackId;
+                    AudioMessage.validateIdentifier(trackId);
+                }
+
+                DayTime dayTime = null;
+                Object rawDayTime = map.get("time");
+                if (rawDayTime != null) {
+                    if (!(rawDayTime instanceof String) || (dayTime = DayTime.byName((String) rawDayTime)) == null) {
+                        return null;
+                    }
+                }
+
+                return new AudioTrack(audioId, trackId, dayTime);
+            } else {
+                if (!(object instanceof String)) {
                     return null;
                 }
-            }
+                String audioId = (String) object;
+                AudioMessage.validateIdentifier(audioId);
 
-            return new AudioTrack(audioId, trackId, dayTime);
-        } else {
-            String audioId;
-            if (!(object instanceof String) || !AudioMessage.validateIdentifier(audioId = (String) object).isSuccess()) {
-                return null;
+                return new AudioTrack(audioId, null, null);
             }
-
-            return new AudioTrack(audioId, null, null);
+        } catch (IdentifierSyntaxException e) {
+            return null;
         }
     }
 

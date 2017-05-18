@@ -4,8 +4,8 @@ import com.deadmandungeons.audioconnect.AudioConnect;
 import com.deadmandungeons.audioconnect.flags.compat.FlagHandler;
 import com.deadmandungeons.audioconnect.flags.compat.LegacyFlag;
 import com.deadmandungeons.audioconnect.messages.AudioMessage;
+import com.deadmandungeons.audioconnect.messages.AudioMessage.IdentifierSyntaxException;
 import com.deadmandungeons.audioconnect.messages.AudioMessage.Range;
-import com.deadmandungeons.connect.commons.Result;
 import com.sk89q.worldguard.protection.flags.Flag;
 import com.sk89q.worldguard.protection.flags.FlagContext;
 import com.sk89q.worldguard.protection.flags.InvalidFlagFormat;
@@ -19,25 +19,12 @@ public class AudioDelayFlag extends Flag<AudioDelay> implements FlagHandler<Audi
     private final AudioConnect plugin = AudioConnect.getInstance();
     private final StringFlag stringFlag = new StringFlag(null);
 
-    private AudioDelayFlag(String name) {
-        super(name);
-    }
-
-
-    public static Flag<AudioDelay> create() {
-        return create(null);
-    }
-
-    public static Flag<AudioDelay> create(String name) {
-        return new AudioDelayFlag(name);
+    public AudioDelayFlag() {
+        super(null);
     }
 
     public static Flag<AudioDelay> createLegacy() {
-        return createLegacy(null);
-    }
-
-    public static Flag<AudioDelay> createLegacy(String name) {
-        return new LegacyFlag<>(new AudioDelayFlag(null), name);
+        return new LegacyFlag<>(new AudioDelayFlag(), null);
     }
 
 
@@ -67,9 +54,10 @@ public class AudioDelayFlag extends Flag<AudioDelay> implements FlagHandler<Audi
                 }
             } else if (trackId == null && key.equals("track")) {
                 trackId = value;
-                Result<String> audioIdValidation = AudioMessage.validateIdentifier(trackId);
-                if (!audioIdValidation.isSuccess()) {
-                    throw new InvalidFlagFormat("track " + audioIdValidation.getFailReason());
+                try {
+                    AudioMessage.validateIdentifier(trackId);
+                } catch (IdentifierSyntaxException e) {
+                    throw new InvalidFlagFormat("track " + e.getMessage());
                 }
             } else {
                 throw new InvalidFlagFormat("Duplicate or unkown AudioDelay property '" + key + "'");
@@ -96,10 +84,15 @@ public class AudioDelayFlag extends Flag<AudioDelay> implements FlagHandler<Audi
             String trackId = null;
             Object rawTrackId = map.get("track");
             if (rawTrackId != null) {
-                if (!(rawTrackId instanceof String) || !AudioMessage.validateIdentifier((String) rawTrackId).isSuccess()) {
+                if (!(rawTrackId instanceof String)) {
                     return null;
                 }
-                trackId = (String) rawTrackId;
+                try {
+                    trackId = (String) rawTrackId;
+                    AudioMessage.validateIdentifier(trackId);
+                } catch (IdentifierSyntaxException e) {
+                    return null;
+                }
             }
 
             return new AudioDelay(delayTime, trackId);

@@ -8,10 +8,10 @@ import com.deadmandungeons.audioconnect.flags.AudioDelayFlag;
 import com.deadmandungeons.audioconnect.flags.AudioTrack;
 import com.deadmandungeons.audioconnect.flags.AudioTrackFlag;
 import com.deadmandungeons.audioconnect.messages.AudioMessage;
+import com.deadmandungeons.audioconnect.messages.AudioMessage.IdentifierSyntaxException;
 import com.deadmandungeons.audioconnect.messages.AudioMessage.Range;
 import com.deadmandungeons.connect.commons.ConnectUtils;
 import com.deadmandungeons.connect.commons.Messenger.Message;
-import com.deadmandungeons.connect.commons.Result;
 import com.deadmandungeons.deadmanplugin.Conversion.Converter;
 import com.deadmandungeons.deadmanplugin.DeadmanPlugin;
 import com.deadmandungeons.deadmanplugin.Messenger;
@@ -89,8 +89,8 @@ public final class AudioConnect extends DeadmanPlugin {
             worldGuard.getClass().getMethod("getFlagRegistry");
 
             // WorldGuard version is 6.2 or above
-            audioFlag = new SetFlag<>("audio", AudioTrackFlag.create());
-            audioDelayFlag = new SetFlag<>("audio-delay", AudioDelayFlag.create());
+            audioFlag = new SetFlag<>("audio", new AudioTrackFlag());
+            audioDelayFlag = new SetFlag<>("audio-delay", new AudioDelayFlag());
 
             worldGuard.getFlagRegistry().register(audioFlag);
             worldGuard.getFlagRegistry().register(audioDelayFlag);
@@ -606,16 +606,18 @@ public final class AudioConnect extends DeadmanPlugin {
             if (object instanceof ConfigurationSection) {
                 ConfigurationSection section = (ConfigurationSection) object;
                 String trackId = section.getName();
-                Result<String> trackIdValidation = AudioMessage.validateIdentifier(trackId);
-                if (trackIdValidation.isSuccess()) {
+                try {
+                    AudioMessage.validateIdentifier(trackId);
+
                     boolean defaultTrack = section.getBoolean("default");
                     boolean repeating = section.getBoolean("repeating");
                     boolean random = section.getBoolean("random");
                     boolean fading = section.getBoolean("fading");
                     return new AudioTrackSettings(defaultTrack, repeating, random, fading);
+                } catch (IdentifierSyntaxException e) {
+                    String warning = "The configured track ID '" + trackId + "' is invalid. " + e.getMessage();
+                    getInstance().getLogger().warning(warning);
                 }
-                String warning = "The configured track ID '" + trackId + "' is invalid. " + trackIdValidation.getFailReason();
-                getInstance().getLogger().warning(warning);
             }
             return null;
         }
