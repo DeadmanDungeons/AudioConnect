@@ -92,7 +92,7 @@ public final class AudioConnect extends DeadmanPlugin {
 
     @Override
     protected void onPluginLoad() {
-        PluginFile langFile = PluginFile.creator(this, LANG_DIRECTORY + "english.yml").defaultFile("english.yml").create();
+        PluginFile langFile = PluginFile.creator(this, LANG_DIRECTORY + "locale/messages_en.yml").defaultFile("locale/messages_en.yml").create();
         messenger = new Messenger(this, langFile);
 
         worldGuard = (WorldGuardPlugin) Bukkit.getPluginManager().getPlugin("WorldGuard");

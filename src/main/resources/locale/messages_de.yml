@@ -1,0 +1,55 @@
+# User Message File
+# Language: German
+#
+# Recognized formatting codes:
+#   http://www.minecraftwiki.net/wiki/Formatting_codes
+
+
+# if a message does not define any formatting, these colors will be used
+primary-color: '&6'   # Used for message variables
+secondary-color: '&7' # Used for message text
+tertiary-color: '&8'  # Used for message block boundaries
+
+failed:
+  invalid-args: '&cFalsche Angaben. Schreibe "/ac help" für eine Liste der Commands.'
+  invalid-args-alt: '&cFalsche Angaben. Die richtige Nutzung des Commands ist:'
+  no-permission: '&cDu hast keine Erlaubnis für diesen Command.'
+  not-connected: '&cDu bist nicht mit dem Audio Stream dieses Servers verbunden. Verbinde dich mit /ac connect'
+  no-players-connected: '&cDerzeit sind keine Spieler mit dem Audio Stream dieses Servers verbunden.'
+  player-not-connected: '&c<player-name> ist nicht mit dem Audio Stream dieses Servers verbunden.'
+  client-disconnected: '&cDieser Server is derzeit nicht mit AudioConnect verbunden.'
+  audio-not-added: 'Die Audio Datei mit dieser ID wurde deinem Account nicht hinzugefügt.'
+  invalid-audio-id: "&cUngültige Audio ID '<audio-id>': <reason>"
+  invalid-track-id: "&cUngültige Track ID '<track-id>': <reason>"
+  invalid-delay-range: '&cDie Audio-Delay <delay-range> ist Ungültig. Gültige Ausdrücke sind ''\<min\>-\<max\>'' oder ''\<constant\>'''
+  verify-invalid-config: '&4Ungültige Config: &cDer AudioConnect Account und die Serverinformationen müssen konfiguriert sein.'
+  verify-invalid-address: '&cUngültige Adressen Syntax'
+  verify-in-progress: '&cEine Verifizierungsanfrage ist bereits in Bearbeitung.'
+  verify-response-401: '&4Die Verifizierungsanfrage wurde abgelehnt: &cDie konfigurierten Account Daten sind ungültig. Bitte überprüfe dass deine USER-ID und Passwort in der config.yml korrekt sind.'
+  verify-response-404: '&4Die Verifizierungsanfrage wurde abgelehnt: &cDein Account hat keinen Server mit einer konfigurierten SERVER-ID. Bitte überprüfe dass die Verbindungsangaben in der config.yml korrekt sind.'
+  verify-response-409: '&4Die Verifizierungsanfrage wurde abgelehnt: &cDie gesetzte Adresse wurde bereits von einem anderen Server verifiziert.'
+  verify-response: '&4Die Verifizierungsanfrage wurde abgelehnt: &cUnerwarteter Grund (<code>)'
+  verify-invalid: '&cDie genannte Adresse wurde nicht als die Öffentlichen Adresse für diesen Server verifiziert. Bitte gehe sicher das die Adresse zu diesem Server leitet und öffentlich verfügbar ist.'
+  verify-error: '&cEine unerwarteter Fehler ist aufgetreten beim kontaktieren des AudioConnect Server´s.'
+
+succeeded:
+  reloaded: 'AudioConnect Config und Sprachdateien wurden reloaded.'
+  audio-sent-all: 'Audio <audio-id> wurde an alle verbundenen Spieler gesendet.'
+  audio-sent-player: 'Audio <audio-id> wurde an <player-name> gesendet.'
+  volume-set: 'Audio wurde <state>'
+  address-verified: "&7Die Öffentliche Adresse &6<address> &7dieses Servers wurde mit deinem Account bei <host> &averifiziert."
+
+misc:
+  announcement: 'Erlebe diesen Server auf einem ganz neuen Level mit integrierter Server-Audio! '
+  verify-request: 'Verifiziere die Adresse mit deinem Account bei <host> ...'
+  verify-check: 'Überprüfe Verifizierungsstatus...'
+  register-details: |
+      &7Nutze den Link und logge dich auf dem Server mit der Adresse ein. Führe den Command danach erneut aus um deine Besitzerrechte für den Account sicherzustellen.
+        
+        &6minecraftaudio.com/account/register
+  connect-details: |
+      &7Klicke auf die URL für den Sound:
+        
+      &6<connect-url>
+  top-bar: '&8\<&m                             &r&6 Audio Connect &8&m                             &r&8\>'
+  bottom-bar: '&8\<&m                                                                             &r&8\>'
