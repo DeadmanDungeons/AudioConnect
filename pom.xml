@@ -33,6 +33,12 @@
                 </executions>
                 <configuration>
                     <minimizeJar>false</minimizeJar>
+                    <relocations>
+                        <relocation>
+                            <pattern>com.deadmandungeons.deadmanplugin</pattern>
+                            <shadedPattern>com.deadmandungeons.audioconnect.deadmanplugin</shadedPattern>
+                        </relocation>
+                    </relocations>
                 </configuration>
             </plugin>
         </plugins>
@@ -81,7 +87,6 @@
             <groupId>com.deadmandungeons</groupId>
             <artifactId>deadman-plugin</artifactId>
             <version>1.8.12</version>
-            <scope>provided</scope>
         </dependency>
 
         <dependency>

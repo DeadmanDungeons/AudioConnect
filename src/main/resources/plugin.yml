@@ -4,7 +4,7 @@ version: 1.2.8
 author: Weasel_Squeezer
 website: https://minecraftaudio.com
 
-depend: [DeadmanPlugin, WorldGuard]
+depend: [WorldGuard]
 
 commands:
     ac:
