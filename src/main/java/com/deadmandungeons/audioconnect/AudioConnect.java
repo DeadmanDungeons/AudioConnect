@@ -63,6 +63,7 @@ public final class AudioConnect extends DeadmanPlugin {
 
     private final Config config = new Config();
     private final AudioList audioList = new AudioList(getLogger());
+    private final boolean spigot;
 
     private Messenger messenger;
     private WorldGuardPlugin worldGuard;
@@ -78,6 +79,16 @@ public final class AudioConnect extends DeadmanPlugin {
         return getDeadmanPlugin(AudioConnect.class);
     }
 
+    public AudioConnect() {
+        boolean spigot = true;
+        try {
+            // Check if the server is running on Spigot and thus the Spigot API is available
+            Class.forName("org.spigotmc.SpigotConfig");
+        } catch (ClassNotFoundException e) {
+            spigot = false;
+        }
+        this.spigot = spigot;
+    }
 
     @Override
     protected void onPluginLoad() {
@@ -145,6 +156,14 @@ public final class AudioConnect extends DeadmanPlugin {
 
 
     /**
+     * Useful in checking if the spigot API is available.
+     * @return <code>true</code> if the server is running on Spigot, and <code>false</code> otherwise
+     */
+    public boolean isSpigot() {
+        return spigot;
+    }
+
+    /**
      * @return the AudioConnectConfig instance containing parsed plugin configuration values
      */
     public AudioConnectConfig getConfiguration() {
@@ -170,6 +189,20 @@ public final class AudioConnect extends DeadmanPlugin {
      */
     public Messenger getMessenger() {
         return messenger;
+    }
+
+    /**
+     * @return the custom <code>audio</code> WorldGuard flag instance
+     */
+    public SetFlag<AudioTrack> getAudioFlag() {
+        return audioFlag;
+    }
+
+    /**
+     * @return the custom <code>audio-delay</code> WorldGuard flag instance
+     */
+    public SetFlag<AudioDelay> getAudioDelayFlag() {
+        return audioDelayFlag;
     }
 
     /**
@@ -235,7 +268,7 @@ public final class AudioConnect extends DeadmanPlugin {
         @Override
         public void flushData() {
             if (messageBuffer.size() > 0) {
-                client.writeAndFlush(messageBuffer.toArray(new AudioMessage[messageBuffer.size()]));
+                client.writeAndFlush(messageBuffer.toArray(new Message[messageBuffer.size()]));
                 messageBuffer.clear();
             }
         }
