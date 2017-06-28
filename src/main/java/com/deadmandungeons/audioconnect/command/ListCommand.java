@@ -13,9 +13,6 @@ import com.deadmandungeons.deadmanplugin.command.SubCommandInfo;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
-import net.md_5.bungee.api.chat.ClickEvent;
-import net.md_5.bungee.api.chat.HoverEvent;
-import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
@@ -123,24 +120,7 @@ public class ListCommand implements Command {
 
             // Add previous/next page buttons if spigot api is available
             if (plugin.isSpigot() && sender instanceof Player && (pageNum > 1 || pageNum < maxPage)) {
-                TextComponent previousButton = new TextComponent("<< Previous");
-                previousButton.setColor(net.md_5.bungee.api.ChatColor.DARK_GRAY);
-                if (pageNum > 1) {
-                    initPageButton(previousButton, type, pageNum - 1);
-                }
-                TextComponent nextButton = new TextComponent("Next >>");
-                nextButton.setColor(net.md_5.bungee.api.ChatColor.DARK_GRAY);
-                if (pageNum < maxPage) {
-                    initPageButton(nextButton, type, pageNum + 1);
-                }
-
-                TextComponent pageButtons = new TextComponent("                         ");
-                pageButtons.addExtra(previousButton);
-                pageButtons.addExtra("    ");
-                pageButtons.addExtra(nextButton);
-
-                sender.sendMessage("");
-                ((Player) sender).spigot().sendMessage(pageButtons);
+                ListCommandSpigot.sendPageButtons((Player) sender, type, pageNum, maxPage);
             }
 
             plugin.getMessenger().sendMessage(sender, "misc.bottom-bar");
@@ -164,14 +144,6 @@ public class ListCommand implements Command {
         protected abstract void printHeader(CommandSender sender);
 
         protected abstract void printListItem(CommandSender sender, T item);
-
-        private void initPageButton(TextComponent pageButton, String type, int page) {
-            pageButton.setColor(net.md_5.bungee.api.ChatColor.valueOf(color2().name()));
-            String command = "/ac list " + type + " " + page;
-            pageButton.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, command));
-            TextComponent[] hoverText = {new TextComponent("Show page " + page)};
-            pageButton.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, hoverText));
-        }
 
     }
 
@@ -254,14 +226,7 @@ public class ListCommand implements Command {
         @Override
         protected void printListItem(CommandSender sender, String audioId) {
             if (plugin.isSpigot() && sender instanceof Player) {
-                String audioUrl = plugin.getConfiguration().getConnectionWebappUrl() + "/account/audio/" + audioId;
-                TextComponent audioLink = new TextComponent("  " + audioId);
-                audioLink.setColor(net.md_5.bungee.api.ChatColor.valueOf(color1().name()));
-                audioLink.setClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, audioUrl));
-                TextComponent[] hoverText = {new TextComponent("Click for more info")};
-                audioLink.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, hoverText));
-
-                ((Player) sender).spigot().sendMessage(audioLink);
+                ListCommandSpigot.sendAudioId((Player) sender, audioId, color1());
             } else {
                 sender.sendMessage("  " + color1() + audioId);
             }
