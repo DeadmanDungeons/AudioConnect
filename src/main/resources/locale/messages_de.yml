@@ -1,4 +1,4 @@
-# User Message File
+# Plugin Messages File
 # Language: German
 #
 # Recognized formatting codes:
@@ -51,5 +51,5 @@ misc:
       &7Klicke auf die URL für den Sound:
         
       &6<connect-url>
-  top-bar: '&8\<&m                             &r&6 Audio Connect &8&m                             &r&8\>'
-  bottom-bar: '&8\<&m                                                                             &r&8\>'
+  top-bar: '&8\<&m-------------------&r&6 Audio Connect &8&m-------------------&r&8\>'
+  bottom-bar: '&8\<&m---------------------------------------------------&r&8\>'

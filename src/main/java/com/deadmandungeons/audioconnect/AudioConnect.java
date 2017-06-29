@@ -32,6 +32,7 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.metadata.FixedMetadataValue;
 
+import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
@@ -57,19 +58,15 @@ import java.util.regex.Pattern;
  */
 public final class AudioConnect extends DeadmanPlugin {
 
-    private static final String TRACKING_METADATA = "audio-tracking-data";
-    private static final String GLOBAL_REGION_ID = "__global__";
-    private static final int REGION_CHECK_DELAY = 3000;
-
     private final Config config = new Config();
     private final AudioList audioList = new AudioList(getLogger());
     private final boolean spigot;
 
-    private Messenger messenger;
     private WorldGuardPlugin worldGuard;
     private SetFlag<AudioTrack> audioFlag;
     private SetFlag<AudioDelay> audioDelayFlag;
 
+    private Messenger messenger;
     private AudioConnectClient client;
 
     /**
@@ -92,9 +89,6 @@ public final class AudioConnect extends DeadmanPlugin {
 
     @Override
     protected void onPluginLoad() {
-        PluginFile langFile = PluginFile.creator(this, LANG_DIRECTORY + "locale/messages_en.yml").defaultFile("locale/messages_en.yml").create();
-        messenger = new Messenger(this, langFile);
-
         worldGuard = (WorldGuardPlugin) Bukkit.getPluginManager().getPlugin("WorldGuard");
         try {
             worldGuard.getClass().getMethod("getFlagRegistry");
@@ -138,6 +132,8 @@ public final class AudioConnect extends DeadmanPlugin {
     protected void onPluginEnable() {
         setConfig(config);
 
+        messenger = new Messenger(this, config.getLocaleFile());
+
         getCommand("ac").setExecutor(new CommandHandler(this, messenger, config.getCommandCooldown()));
 
         Bukkit.getScheduler().runTaskTimer(this, new ConnectAnouncement(), 0, config.getAnnounceFrequency() * 20);
@@ -154,6 +150,14 @@ public final class AudioConnect extends DeadmanPlugin {
         client.shutdown().awaitUninterruptibly();
     }
 
+    @Override
+    public void reloadConfig() {
+        super.reloadConfig();
+
+        if (messenger != null && !messenger.getLangFile().equals(config.getLocaleFile())) {
+            messenger.setLangFile(config.getLocaleFile());
+        }
+    }
 
     /**
      * Useful in checking if the spigot API is available.
@@ -242,6 +246,10 @@ public final class AudioConnect extends DeadmanPlugin {
     }
 
     private class PlayerAudioTracker implements PlayerAudioDataWriter {
+
+        private static final String TRACKING_METADATA = "audio-tracking-data";
+        private static final String GLOBAL_REGION_ID = "__global__";
+        private static final int REGION_CHECK_DELAY = 3000;
 
         private final List<Message> messageBuffer = new ArrayList<>();
 
@@ -430,6 +438,9 @@ public final class AudioConnect extends DeadmanPlugin {
             getInstance().getConversion().registerConverter(AudioTrackSettings.class, new AudioTrackSettingsConverter());
         }
 
+        private final ConfigEntry<String> locale = entry(String.class, "options.locale");
+        private final ConfigEntry<Number> commandCooldown = entry(Number.class, "options.command-cooldown");
+        private final ConfigEntry<Number> announceFrequency = entry(Number.class, "options.announce-frequency");
         private final ConfigEntry<String> connectionUserId = entry(String.class, "connection.user-id");
         private final ConfigEntry<String> connectionUserPassword = entry(String.class, "connection.user-password");
         private final ConfigEntry<String> connectionServerId = entry(String.class, "connection.server-id");
@@ -442,11 +453,9 @@ public final class AudioConnect extends DeadmanPlugin {
         private final ConfigEntry<Number> reconnectMaxInterval = entry(Number.class, "reconnect.max-interval");
         private final ConfigEntry<Number> reconnectDelay = entry(Number.class, "reconnect.delay");
         private final ConfigEntry<Number> reconnectMaxAttempts = entry(Number.class, "reconnect.max-attempts");
-        private final ConfigEntry<Number> commandCooldown = entry(Number.class, "options.command-cooldown");
-        private final ConfigEntry<Number> announceFrequency = entry(Number.class, "options.announce-frequency");
         private final MapConfigEntry<String, AudioTrackSettings> audioTracks = mapEntry(AudioTrackSettings.class, "audio-tracks");
 
-
+        private volatile PluginFile localeFile;
         private volatile UUID userId;
         private volatile UUID serverId;
         private volatile URI websocketUri;
@@ -455,6 +464,7 @@ public final class AudioConnect extends DeadmanPlugin {
         @Override
         public synchronized void loadEntries(DeadmanPlugin plugin) throws IllegalStateException {
             super.loadEntries(plugin);
+            localeFile = null;
             userId = null;
             serverId = null;
             websocketUri = null;
@@ -482,6 +492,30 @@ public final class AudioConnect extends DeadmanPlugin {
             }
             return true;
         }
+
+
+        @Override
+        public String getLocale() {
+            return locale.value();
+        }
+
+        public PluginFile getLocaleFile() {
+            if (localeFile == null) {
+                localeFile = createLocaleFile(locale);
+            }
+            return localeFile;
+        }
+
+        @Override
+        public synchronized int getCommandCooldown() {
+            return commandCooldown.value().intValue();
+        }
+
+        @Override
+        public synchronized int getAnnounceFrequency() {
+            return announceFrequency.value().intValue();
+        }
+
 
         @Override
         public synchronized UUID getConnectionUserId() {
@@ -575,18 +609,22 @@ public final class AudioConnect extends DeadmanPlugin {
         }
 
         @Override
-        public synchronized int getCommandCooldown() {
-            return commandCooldown.value().intValue();
-        }
-
-        @Override
-        public synchronized int getAnnounceFrequency() {
-            return announceFrequency.value().intValue();
-        }
-
-        @Override
         public synchronized Map<String, AudioTrackSettings> getAudioTracks() {
             return audioTracks.value();
+        }
+
+
+        private static PluginFile createLocaleFile(ConfigEntry<String> locale) {
+            try {
+                String filePath = "locale" + File.separator + "messages_" + locale.value().trim() + ".yml";
+                return PluginFile.creator(getInstance(), filePath).defaultFile(filePath).create();
+            } catch (Exception e) {
+                String defaultLocale = locale.defaultValue().trim();
+                getInstance().getLogger().warning("Unsupported locale at " + locale.getPath() + " in config. Using default: " + defaultLocale);
+
+                String filePath = "locale" + File.separator + "messages_" + defaultLocale + ".yml";
+                return PluginFile.creator(getInstance(), filePath).defaultFile(filePath).create();
+            }
         }
 
         private static URI createWebsocketUri(ConfigEntry<Boolean> secure, ConfigEntry<String> host, ConfigEntry<Number> port) {
