@@ -1,0 +1,55 @@
+# Plugin Messages File
+# Language: French
+#
+# Recognized formatting codes:
+#   http://www.minecraftwiki.net/wiki/Formatting_codes
+
+
+# if a message does not define any formatting, these colors will be used
+primary-color: '&6'   # Used for message variables
+secondary-color: '&7' # Used for message text
+tertiary-color: '&8'  # Used for message block boundaries
+
+failed:
+  invalid-args: '&cArguments invalides. Tape "/ac help" pour une liste des commandes. '
+  invalid-args-alt: '&cArguments invalides. La commande appropriée est:'
+  no-permission: '&cYTu n''as pas la permission de faire cette commande !'
+  not-connected: '&cVous n''êtes pas connecté à votre serveur audio. Connecte avec /ac connect'
+  no-players-connected: '&cAucun joueur n''est actuellement connecté au serveur Audio.'
+  player-not-connected: '&c<player-name> n''est pas connecté au serveur Audio !'
+  client-disconnected: '&cCe serveur est actuellement déconnecté de AudioConnect !'
+  audio-not-added: 'Un fichier audio avec avec cet ID n''a pas été ajouté à votre compte !'
+  invalid-audio-id: "&cID Audio Invalide '<audio-id>': <reason>"
+  invalid-track-id: "&cID de la chanson Invalide '<track-id>': <reason>"
+  invalid-delay-range: '&cLe délai Audio <delay-range> est invalide. Les formats valides sont ''\<min\>-\<max\>'' or ''\<constant\>'''
+  verify-invalid-config: '&4Config Invalide: &cLe compte AudioConnect et les informations du serveur sont à définir dans la configuration.'
+  verify-invalid-address: '&cSyntage de l''adresse invalide !'
+  verify-in-progress: '&cUne demande de vérification est déjà en cours !'
+  verify-response-401: '&4La vérifcation a été rejetée: &cLes crédits du compte crées sont invalides !'
+  verify-response-404: '&4La vérifcation a été rejetée: &cTon compte n''a pas un serveur configuré avec le server-id !'
+  verify-response-409: '&4La vérifcation a été rejetée: &cL''adresse donnée a déjà été vérifiée par un autre serveur !'
+  verify-response: '&4La vérifcation a été rejetée: &cRaison inattendue (<code>) !'
+  verify-invalid: '&cL''adresse fournie n''est pas vérifiée comme l''adresse publique pour ce serveur !'
+  verify-error: '&cUne erreur inattendue est arrivée en entrant en contact avec le serveur d''AudioConnect !'
+
+succeeded:
+  reloaded: 'La configuration et les fichiers de langue de AudioConnect ont été rechargées !'
+  audio-sent-all: 'Le fichier Audio <audio-id> a été envoyé à tous les joueurs connectés !'
+  audio-sent-player: 'Le fichier Audio <audio-id> a été envoyé au joueur <player-name> !'
+  volume-set: 'Le fichier Audio a été mis à <state> !'
+  address-verified: "&7L'adresse publique du serveur &6<address> &7a été &avérifiée pour ton compte <host> !"
+
+misc:
+  announcement: 'Améliore ton expérience de jeu avec une toute nouvelle nouveauté qui est l''intégration Audio (une Radio !) ! :D'
+  verify-request: 'Vérification de l''adresse pour ton compte <host> ...'
+  verify-check: 'Vérification du statut de vérification...'
+  register-details: |
+      &7Connecte-toi au serveur en utilisant l'adresse ci-dessous et exécute cette commande de nouveau pour valider la propriété votre compte
+
+        &6account.minecraftaudio.com
+  connect-details: |
+      &7Clique sur cette URL pour écouter:
+
+        &6<connect-url>
+  top-bar: '&8\<&m------------------&r&6 Connexion Audio &8&m------------------&r&8\>'
+  bottom-bar: '&8\<&m---------------------------------------------------&r&8\>'
