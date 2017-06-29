@@ -1,5 +1,7 @@
 package com.deadmandungeons.audioconnect;
 
+import com.deadmandungeons.deadmanplugin.filedata.PluginFile;
+
 import java.net.URI;
 import java.net.URL;
 import java.util.Map;
@@ -8,6 +10,16 @@ import java.util.UUID;
 public interface AudioConnectConfig {
 
     boolean validate();
+
+
+    String getLocale();
+
+    PluginFile getLocaleFile();
+
+    int getCommandCooldown();
+
+    int getAnnounceFrequency();
+
 
     UUID getConnectionUserId();
 
@@ -37,10 +49,6 @@ public interface AudioConnectConfig {
 
     int getReconnectMaxAttempts();
 
-
-    int getCommandCooldown();
-
-    int getAnnounceFrequency();
 
     Map<String, AudioTrackSettings> getAudioTracks();
 

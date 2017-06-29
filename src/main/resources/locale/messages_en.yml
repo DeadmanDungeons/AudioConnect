@@ -1,4 +1,4 @@
-# User Message File
+# Plugin Messages File
 # Language: English
 #
 # Recognized formatting codes:
@@ -30,7 +30,7 @@ failed:
   verify-response-409: '&4The verify request was rejected: &cThe given address has already been verified for a different server'
   verify-response: '&4The verify request was rejected: &cUnexpected reason (<code>)'
   verify-invalid: '&cThe provided address did not verify as the public address for this server. Please make sure the address points to this server and is publicly accessible'
-  verify-error: '&cAn unexpected error occured while contacting AudioConnect server'
+  verify-error: '&cAn unexpected error occurred while contacting AudioConnect server'
 
 succeeded:
   reloaded: 'AudioConnect config and language files have been reloaded'
@@ -51,5 +51,5 @@ misc:
       &7Click this URL to listen:
         
       &6<connect-url>
-  top-bar: '&8\<&m-----------------------------&r&6 Audio Connect &8&m-----------------------------&r&8\>'
-  bottom-bar: '&8\<&m------------------------------------------------------------------------------&r&8\>'
+  top-bar: '&8\<&m-------------------&r&6 Audio Connect &8&m-------------------&r&8\>'
+  bottom-bar: '&8\<&m---------------------------------------------------&r&8\>'
