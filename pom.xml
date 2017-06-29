@@ -7,8 +7,6 @@
     <name>AudioConnect</name>
 
     <build>
-        <finalName>AudioConnect</finalName>
-
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
