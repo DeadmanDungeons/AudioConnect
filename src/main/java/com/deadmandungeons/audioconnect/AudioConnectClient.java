@@ -273,7 +273,7 @@ public class AudioConnectClient {
             return GlobalEventExecutor.INSTANCE.newSucceededFuture(null);
         }
 
-        final Promise<Object> shutdownPromise = bootstrap.group().next().newPromise();
+        final Promise<Object> shutdownPromise = GlobalEventExecutor.INSTANCE.newPromise();
 
         disconnect().addListener(new FutureListener<Object>() {
 
