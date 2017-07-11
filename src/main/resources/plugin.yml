@@ -1,6 +1,6 @@
 name: AudioConnect
 main: com.deadmandungeons.audioconnect.AudioConnect
-version: 1.2.9
+version: ${project.version}
 author: Weasel_Squeezer
 website: https://minecraftaudio.com
 
@@ -39,16 +39,19 @@ permissions:
         default: op
         description: Gives access to all AudioConnect admin permissions
         children:
+            audioconnect.admin.import: true
             audioconnect.admin.verify: true
             audioconnect.admin.reload: true
             audioconnect.admin.list: true
             audioconnect.admin.send: true
+    audioconnect.admin.import:
+        description: Gives access to import the regions and audio files from your MCJukebox installation
     audioconnect.admin.verify:
         description: Gives access to verify the public address of this server
     audioconnect.admin.reload:
         description: Gives access to reload this plugin and reconnect
     audioconnect.admin.list:
-        description: Gives access to list the connected players and available audio
+        description: Gives access to list the connected players, available audio, and enabled regions
     audioconnect.admin.send:
         description: Gives access to send and play audio to a connected player
     audioconnect.user.*:
