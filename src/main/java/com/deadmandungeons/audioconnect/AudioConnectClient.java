@@ -134,7 +134,7 @@ public class AudioConnectClient {
     }
 
     /**
-     * @param playerId - The UUID of the player to check
+     * @param playerId the UUID of the player to check
      * @return <code>true</code> if a player identified with the given playerId is connected to the web client endpoint
      */
     public boolean isPlayerConnected(UUID playerId) {
@@ -143,7 +143,7 @@ public class AudioConnectClient {
     }
 
     /**
-     * @return an unmodifiable thread safe collection of {@link PlayerConnection}'s
+     * @return an unmodifiable thread safe collection of {@link PlayerConnection}
      */
     public Collection<PlayerConnection> getPlayerConnections() {
         Connection connection = this.connection;
@@ -155,7 +155,7 @@ public class AudioConnectClient {
 
     /**
      * If a connection is not established with the AudioConnect server, this will do nothing.
-     * @param messages - The Messages to be sent to the AudioConnect server
+     * @param messages the Messages to be sent to the AudioConnect server
      */
     public void writeAndFlush(Message... messages) {
         Connection connection = this.connection;
@@ -656,6 +656,9 @@ public class AudioConnectClient {
 
     }
 
+    /**
+     * A class containing the connection details for a player who has connected to this server from the web client.
+     */
     public static class PlayerConnection {
 
         private final UUID playerId;
@@ -668,10 +671,17 @@ public class AudioConnectClient {
             this.connectionTimestamp = connectionTimestamp;
         }
 
+        /**
+         * The player may be online or offline
+         * @return the OfflinePlayer instance for this connected player
+         */
         public OfflinePlayer getPlayer() {
             return Bukkit.getOfflinePlayer(playerId);
         }
 
+        /**
+         * @return the unix timestamp in milliseconds for when the player connected to this server from the web client.
+         */
         public long getConnectionTimestamp() {
             return connectionTimestamp;
         }
@@ -682,8 +692,8 @@ public class AudioConnectClient {
 
         /**
          * This method will only be called on the main server thread.
-         * @param player - The player to write the audio messages for
-         * @param messageBuffer - the list to add the audio messages to
+         * @param player the player to write the audio messages for
+         * @param messageBuffer the list to add the audio messages to
          */
         void writeAudioMessages(Player player, List<Message> messageBuffer);
 
