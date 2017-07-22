@@ -1,22 +1,17 @@
 package com.deadmandungeons.audioconnect;
 
 import com.deadmandungeons.audioconnect.AudioConnectClient.PlayerAudioDataWriter;
-import com.deadmandungeons.audioconnect.AudioConnectConfig.AudioTrackSettings;
 import com.deadmandungeons.audioconnect.command.CommandHandler;
 import com.deadmandungeons.audioconnect.flags.AudioDelay;
 import com.deadmandungeons.audioconnect.flags.AudioDelayFlag;
 import com.deadmandungeons.audioconnect.flags.AudioTrack;
 import com.deadmandungeons.audioconnect.flags.AudioTrackFlag;
 import com.deadmandungeons.audioconnect.messages.AudioMessage;
-import com.deadmandungeons.audioconnect.messages.AudioMessage.IdentifierSyntaxException;
 import com.deadmandungeons.audioconnect.messages.AudioMessage.Range;
 import com.deadmandungeons.connect.commons.ConnectUtils;
 import com.deadmandungeons.connect.commons.Messenger.Message;
-import com.deadmandungeons.deadmanplugin.Conversion.Converter;
 import com.deadmandungeons.deadmanplugin.DeadmanPlugin;
 import com.deadmandungeons.deadmanplugin.Messenger;
-import com.deadmandungeons.deadmanplugin.filedata.DeadmanConfig;
-import com.deadmandungeons.deadmanplugin.filedata.PluginFile;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.bukkit.util.Locations;
 import com.sk89q.worldguard.protection.ApplicableRegionSet;
@@ -24,21 +19,15 @@ import com.sk89q.worldguard.protection.flags.DefaultFlag;
 import com.sk89q.worldguard.protection.flags.Flag;
 import com.sk89q.worldguard.protection.flags.SetFlag;
 import com.sk89q.worldguard.protection.managers.RegionManager;
+import com.sk89q.worldguard.protection.managers.storage.StorageException;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
-import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.metadata.FixedMetadataValue;
 
-import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -49,7 +38,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Level;
-import java.util.regex.Pattern;
 
 /**
  * The main plugin class.<br>
@@ -58,8 +46,8 @@ import java.util.regex.Pattern;
  */
 public final class AudioConnect extends DeadmanPlugin {
 
-    private final Config config = new Config();
-    private final AudioList audioList = new AudioList(getLogger());
+    private final AudioConnectConfig config = new AudioConnectConfig();
+    private final AudioList audioList = new AudioList(getLogger(), new AudioUpdateHandler());
     private final boolean spigot;
 
     private WorldGuardPlugin worldGuard;
@@ -245,6 +233,82 @@ public final class AudioConnect extends DeadmanPlugin {
 
     }
 
+
+    private class AudioUpdateHandler implements AudioList.UpdateHandler {
+
+        @Override
+        public void deleteAll(Set<String> audioIds) {
+            List<RegionManager> regionManagers = WorldGuardPlugin.inst().getRegionContainer().getLoaded();
+            for (RegionManager regionManager : regionManagers) {
+                for (ProtectedRegion region : regionManager.getRegions().values()) {
+                    Set<AudioTrack> audioTracks = region.getFlag(audioFlag);
+                    if (audioTracks != null) {
+                        boolean removedAudio = false;
+                        Set<AudioTrack> newAudioTracks = null;
+                        for (AudioTrack audioTrack : audioTracks) {
+                            if (!audioIds.contains(audioTrack.getAudioId())) {
+                                if (newAudioTracks == null) {
+                                    newAudioTracks = new HashSet<>(audioTracks.size());
+                                }
+                                newAudioTracks.add(audioTrack);
+                            } else {
+                                removedAudio = true;
+                            }
+                        }
+                        if (removedAudio) {
+                            region.setFlag(audioFlag, newAudioTracks);
+                        }
+                    }
+                }
+            }
+            for (RegionManager regionManager : regionManagers) {
+                try {
+                    regionManager.saveChanges();
+                } catch (StorageException e) {
+                    getLogger().log(Level.WARNING, "Failed to save '" + regionManager + "' WorldGuard region changes from audio deletion");
+                }
+            }
+            for (String audioId : audioIds) {
+                getLogger().info("Removed audio '" + audioId + "' from all WorldGuard regions.");
+            }
+        }
+
+        @Override
+        public void replace(String audioId, String newAudioId) {
+            List<RegionManager> regionManagers = WorldGuardPlugin.inst().getRegionContainer().getLoaded();
+            for (RegionManager regionManager : regionManagers) {
+                for (ProtectedRegion region : regionManager.getRegions().values()) {
+                    Set<AudioTrack> audioTracks = region.getFlag(audioFlag);
+                    if (audioTracks != null) {
+                        boolean replacedAudio = false;
+                        Set<AudioTrack> newAudioTracks = new HashSet<>(audioTracks.size());
+                        for (AudioTrack audioTrack : audioTracks) {
+                            if (audioTrack.getAudioId().equals(audioId)) {
+                                newAudioTracks.add(new AudioTrack(newAudioId, audioTrack.getTrackId(), audioTrack.getDayTime()));
+                                replacedAudio = true;
+                            } else {
+                                newAudioTracks.add(audioTrack);
+                            }
+                        }
+                        if (replacedAudio) {
+                            region.setFlag(audioFlag, newAudioTracks);
+                        }
+                    }
+                }
+            }
+            for (RegionManager regionManager : regionManagers) {
+                try {
+                    regionManager.saveChanges();
+                } catch (StorageException e) {
+                    getLogger().log(Level.WARNING, "Failed to save '" + regionManager + "' WorldGuard region changes from audio replacement");
+                }
+            }
+            getLogger().info("Replaced audio '" + audioId + "' with '" + newAudioId + "' in all occurring WorldGuard regions.");
+        }
+
+    }
+
+
     private class PlayerAudioTracker implements PlayerAudioDataWriter {
 
         private static final String TRACKING_METADATA = "audio-tracking-data";
@@ -426,272 +490,6 @@ public final class AudioConnect extends DeadmanPlugin {
             this.location = location;
         }
 
-    }
-
-
-    private static class Config extends DeadmanConfig implements AudioConnectConfig {
-
-        private static final String INVALID_REQUIRED_PROPERTY = "The required %s config property is missing or invalid! Client cannot be started...";
-        private static final Pattern USERNAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_]{2,16}$");
-
-        static {
-            getInstance().getConversion().registerConverter(AudioTrackSettings.class, new AudioTrackSettingsConverter());
-        }
-
-        private final ConfigEntry<String> locale = entry(String.class, "options.locale");
-        private final ConfigEntry<Number> commandCooldown = entry(Number.class, "options.command-cooldown");
-        private final ConfigEntry<Number> announceFrequency = entry(Number.class, "options.announce-frequency");
-        private final ConfigEntry<String> connectionUserId = entry(String.class, "connection.user-id");
-        private final ConfigEntry<String> connectionUserPassword = entry(String.class, "connection.user-password");
-        private final ConfigEntry<String> connectionServerId = entry(String.class, "connection.server-id");
-        private final ConfigEntry<Boolean> connectionSecure = entry(Boolean.class, "connection.endpoint.secure");
-        private final ConfigEntry<String> connectionHost = entry(String.class, "connection.endpoint.host");
-        private final ConfigEntry<Number> connectionWebsocketPort = entry(Number.class, "connection.endpoint.websocket-port");
-        private final ConfigEntry<Number> connectionWebappPort = entry(Number.class, "connection.endpoint.webapp-port");
-        private final ConfigEntry<String> connectionWebappPath = entry(String.class, "connection.endpoint.webapp-path");
-        private final ConfigEntry<Number> reconnectInterval = entry(Number.class, "reconnect.interval");
-        private final ConfigEntry<Number> reconnectMaxInterval = entry(Number.class, "reconnect.max-interval");
-        private final ConfigEntry<Number> reconnectDelay = entry(Number.class, "reconnect.delay");
-        private final ConfigEntry<Number> reconnectMaxAttempts = entry(Number.class, "reconnect.max-attempts");
-        private final MapConfigEntry<String, AudioTrackSettings> audioTracks = mapEntry(AudioTrackSettings.class, "audio-tracks");
-
-        private volatile PluginFile localeFile;
-        private volatile UUID userId;
-        private volatile UUID serverId;
-        private volatile URI websocketUri;
-        private volatile URL webappUrl;
-
-        @Override
-        public synchronized void loadEntries(DeadmanPlugin plugin) throws IllegalStateException {
-            super.loadEntries(plugin);
-            localeFile = null;
-            userId = null;
-            serverId = null;
-            websocketUri = null;
-            webappUrl = null;
-        }
-
-
-        @Override
-        public synchronized boolean validate() {
-            if (getConnectionUserId() == null) {
-                getInstance().getLogger().severe(String.format(INVALID_REQUIRED_PROPERTY, connectionUserId.getPath()));
-                return false;
-            }
-            if (StringUtils.isEmpty(connectionUserPassword.value())) {
-                getInstance().getLogger().severe(String.format(INVALID_REQUIRED_PROPERTY, connectionUserPassword.getPath()));
-                return false;
-            }
-            if (getConnectionServerId() == null) {
-                getInstance().getLogger().severe(String.format(INVALID_REQUIRED_PROPERTY, connectionServerId.getPath()));
-                return false;
-            }
-            if (audioTracks.value().isEmpty()) {
-                getInstance().getLogger().severe(String.format(INVALID_REQUIRED_PROPERTY, audioTracks.getPath()));
-                return false;
-            }
-            return true;
-        }
-
-
-        @Override
-        public String getLocale() {
-            return locale.value();
-        }
-
-        public PluginFile getLocaleFile() {
-            if (localeFile == null) {
-                localeFile = createLocaleFile(locale);
-            }
-            return localeFile;
-        }
-
-        @Override
-        public synchronized int getCommandCooldown() {
-            return commandCooldown.value().intValue();
-        }
-
-        @Override
-        public synchronized int getAnnounceFrequency() {
-            return announceFrequency.value().intValue();
-        }
-
-
-        @Override
-        public synchronized UUID getConnectionUserId() {
-            if (userId == null) {
-                String userIdStr = connectionUserId.value();
-                if (!StringUtils.isEmpty(userIdStr)) {
-                    userId = ConnectUtils.parseId(userIdStr);
-                    if (userId == null && USERNAME_PATTERN.matcher(userIdStr).matches()) {
-                        userId = Bukkit.getOfflinePlayer(userIdStr).getUniqueId();
-                    }
-                }
-            }
-            return userId;
-        }
-
-        @Override
-        public synchronized String getConnectionUserPassword() {
-            return connectionUserPassword.value();
-        }
-
-        @Override
-        public synchronized UUID getConnectionServerId() {
-            if (serverId == null) {
-                String serveridStr = connectionServerId.value();
-                if (!StringUtils.isEmpty(serveridStr)) {
-                    serverId = ConnectUtils.parseId(serveridStr);
-                }
-            }
-            return serverId;
-        }
-
-        @Override
-        public synchronized URI getConnectionWebsocketUri() {
-            if (websocketUri == null) {
-                websocketUri = createWebsocketUri(connectionSecure, connectionHost, connectionWebsocketPort);
-            }
-            return websocketUri;
-        }
-
-        @Override
-        public synchronized URL getConnectionWebappUrl() {
-            if (webappUrl == null) {
-                webappUrl = createWebappUrl(connectionSecure, connectionHost, connectionWebappPort, connectionWebappPath);
-            }
-            return webappUrl;
-        }
-
-        @Override
-        public synchronized boolean isConnectionSecure() {
-            return connectionSecure.value();
-        }
-
-        @Override
-        public synchronized String getConnectionHost() {
-            return connectionHost.value();
-        }
-
-        @Override
-        public synchronized int getConnectionWebsocketPort() {
-            return connectionWebsocketPort.value().intValue();
-        }
-
-        @Override
-        public int getConnectionWebappPort() {
-            return connectionWebappPort.value().intValue();
-        }
-
-        @Override
-        public synchronized String getConnectionWebappPath() {
-            return connectionWebappPath.value();
-        }
-
-        @Override
-        public synchronized int getReconnectInterval() {
-            return reconnectInterval.value().intValue();
-        }
-
-        @Override
-        public synchronized int getReconnectMaxInterval() {
-            return reconnectMaxInterval.value().intValue();
-        }
-
-        @Override
-        public synchronized double getReconnectDelay() {
-            return reconnectDelay.value().doubleValue();
-        }
-
-        @Override
-        public synchronized int getReconnectMaxAttempts() {
-            return reconnectMaxAttempts.value().intValue();
-        }
-
-        @Override
-        public synchronized Map<String, AudioTrackSettings> getAudioTracks() {
-            return audioTracks.value();
-        }
-
-
-        private static PluginFile createLocaleFile(ConfigEntry<String> locale) {
-            try {
-                String filePath = "locale" + File.separator + "messages_" + locale.value().trim() + ".yml";
-                return PluginFile.creator(getInstance(), filePath).defaultFile(filePath).create();
-            } catch (Exception e) {
-                String defaultLocale = locale.defaultValue().trim();
-                getInstance().getLogger().warning("Unsupported locale at " + locale.getPath() + " in config. Using default: " + defaultLocale);
-
-                String filePath = "locale" + File.separator + "messages_" + defaultLocale + ".yml";
-                return PluginFile.creator(getInstance(), filePath).defaultFile(filePath).create();
-            }
-        }
-
-        private static URI createWebsocketUri(ConfigEntry<Boolean> secure, ConfigEntry<String> host, ConfigEntry<Number> port) {
-            try {
-                return createUri((secure.value() ? "wss" : "ws"), host.value(), port.value().intValue(), "/supplier");
-            } catch (URISyntaxException e1) {
-                try {
-                    URI uri = createUri((secure.defaultValue() ? "wss" : "ws"), host.defaultValue(), port.defaultValue().intValue(), "/supplier");
-                    getInstance().getLogger().warning("Invalid host syntax at " + host.getPath() + " in config. Using default URI " + uri);
-                    return uri;
-                } catch (URISyntaxException e2) {
-                    String paths = StringUtils.join(new String[]{secure.getPath(), host.getPath(), port.getPath()}, ", ");
-                    throw new IllegalStateException("A URI for the config values at paths (" + paths + ") in the default configuration file " +
-                            "could not be created! The default configuration must contain valid values.", e2);
-                }
-            }
-        }
-
-        private static URL createWebappUrl(ConfigEntry<Boolean> secure, ConfigEntry<String> host, ConfigEntry<Number> port,
-                ConfigEntry<String> path) {
-            try {
-                int validPort = (port.value().intValue() != 80 ? port.value().intValue() : -1);
-                String validPath = path.value().replaceAll("^([^/])", "/$1").replaceAll("/$", "");
-                return createUri((secure.value() ? "https" : "http"), host.value(), validPort, validPath).toURL();
-            } catch (MalformedURLException | URISyntaxException e1) {
-                try {
-                    int validPort = (port.defaultValue().intValue() != 80 ? port.defaultValue().intValue() : -1);
-                    String validPath = path.defaultValue().replaceAll("^([^/])", "/$1").replaceAll("/$", "");
-                    URL url = createUri((secure.defaultValue() ? "https" : "http"), host.defaultValue(), validPort, validPath).toURL();
-                    getInstance().getLogger().warning("Invalid host syntax at " + host.getPath() + " in config. Using default URL " + url);
-                    return url;
-                } catch (MalformedURLException | URISyntaxException e2) {
-                    String paths = StringUtils.join(new String[]{secure.getPath(), host.getPath(), path.getPath()}, ", ");
-                    throw new IllegalStateException("A URL for the config values at paths (" + paths + ") in the default configuration file " +
-                            "could not be created! The default configuration must contain valid values.", e2);
-                }
-            }
-        }
-
-        private static URI createUri(String protocol, String host, int port, String path) throws URISyntaxException {
-            return new URI(protocol, null, host, port, path, null, null);
-        }
-
-    }
-
-    private static class AudioTrackSettingsConverter implements Converter<AudioTrackSettings> {
-
-        @Override
-        public AudioTrackSettings convert(Object object) {
-            if (object instanceof ConfigurationSection) {
-                ConfigurationSection section = (ConfigurationSection) object;
-                String trackId = section.getName();
-                try {
-                    AudioMessage.validateIdentifier(trackId);
-
-                    boolean defaultTrack = section.getBoolean("default");
-                    boolean repeating = section.getBoolean("repeating");
-                    boolean random = section.getBoolean("random");
-                    boolean fading = section.getBoolean("fading");
-                    return new AudioTrackSettings(defaultTrack, repeating, random, fading);
-                } catch (IdentifierSyntaxException e) {
-                    String warning = "The configured track ID '" + trackId + "' is invalid. " + e.getMessage();
-                    getInstance().getLogger().warning(warning);
-                }
-            }
-            return null;
-        }
     }
 
 }

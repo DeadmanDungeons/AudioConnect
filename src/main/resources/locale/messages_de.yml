@@ -31,6 +31,12 @@ failed:
   verify-response: '&4Die Verifizierungsanfrage wurde abgelehnt: &cUnerwarteter Grund (<code>)'
   verify-invalid: '&cDie genannte Adresse wurde nicht als die Öffentlichen Adresse für diesen Server verifiziert. Bitte gehe sicher das die Adresse zu diesem Server leitet und öffentlich verfügbar ist.'
   verify-error: '&cEine unerwarteter Fehler ist aufgetreten beim kontaktieren des AudioConnect Server´s.'
+  import-running: '&cEine Importierung ist bereits in Bearbeitung. Nutze "&o&c/ac import stop&r&c" um es zu stoppen.'
+  import-stopped: '&cKeine Imports am laufen.'
+  import-mcjukebox-absent: '&cDas MCJukebox Plugin ist nicht installiert. Es gibt nichts zum importieren.'
+  import-mcjukebox-nothing: '&cDas derzeitig installierte MCJukebox hat keine konfigurierte Region-Audio zum importieren.'
+  import-mcjukebox-error: '&cEin unerwarteter Fehler ist beim lesen der MCJukebox Dateien aufgetreten'
+  import-response-401: '&4Die Importanforderung wurde abgelehnt: &cDie konfigurierten Account Daten sind ungültig. Bitte überprüfe dass deine USER-ID und Passwort in der config.yml korrekt sind.'
 
 succeeded:
   reloaded: 'AudioConnect Config und Sprachdateien wurden reloaded.'
@@ -38,15 +44,37 @@ succeeded:
   audio-sent-player: 'Audio <audio-id> wurde an <player-name> gesendet.'
   volume-set: 'Audio wurde <state>'
   address-verified: "&7Die Öffentliche Adresse &6<address> &7dieses Servers wurde mit deinem Account bei <host> &averifiziert."
+  import-stopping: 'Stoppen des aktuellen Importvorgangs ...'
 
 misc:
   announcement: 'Erlebe diesen Server auf einem ganz neuen Level mit integrierter Server-Audio! '
   verify-request: 'Verifiziere die Adresse mit deinem Account bei <host> ...'
   verify-check: 'Überprüfe Verifizierungsstatus...'
+  import-started: '&7Startet Import von &6<import-count> &7<name> Region-Audio Audio...'
+  import-progress: '&7<name> Import Fortschritt: <percent>%'
+  import-finished: '&7<name> Import wurde erfolgreich abgeschlossen!'
+  import-finished-errors: '&7<name> Import mit Fehlern abgeschlossen.'
+  import-stopped: '&7<name> Import vorzeitig gestoppt.'
+  import-stopped-errors: '&7<name> Import hat vorzeitig mit Fehlern gestoppt'
+  import-count: 'Importiert: <import-count>/<import-size> Audio-Regionen (<file-count> Audio Files)'
+  import-errors: '&7Fehler: &c<error-count>'
+  import-info: '&6Checke die Konsolen-Logs für die vollen Import Details'
+  import-rename: 'Hinweis: Audio IDs werden generiert und können von deinem Account unter <host> umbenannt werden.'
+  import-audio-list: 'Importierte Audiodateien: \<audio-id\> (\<audio-url\>)'
+  import-region-list: 'Importierte Regionen: \<region-id\> (\<audio-id\>)'
+  import-error-list: 'FEHLER:  \<region-id\> (\<audio-url\>)'
+  import-error-file: 'Ungültige HTTP URL'
+  import-error-file-404: 'Ungültige URL: Datei nicht gefunden.'
+  import-error-file-download: 'Ungültige URL: Dateidownload fehlgeschlagen.'
+  import-error-file-empty: 'Ungültige URL: Datei ist leer.'
+  import-error-file-large: 'Ungültige URL: Datei ist zu groß. (Upgrade zu Premium in Betracht ziehen.)'
+  import-error-file-format: 'Ungültige URL: Datei ist ein ungültiges oder nicht unterstütztes Audioformat.'
+  import-error-capacity: 'Ungültige URL: Datei würde Speicherkapazität überschreiten (Upgrade zu Premium in Betracht ziehen.)'
+  import-error-region: 'Ungültige Region ID: Die Region existiert nicht.'
   register-details: |
       &7Nutze den Link und logge dich auf dem Server mit der Adresse ein. Führe den Command danach erneut aus um deine Besitzerrechte für den Account sicherzustellen.
         
-        &6minecraftaudio.com/account/register
+        &6account.minecraftaudio.com
   connect-details: |
       &7Klicke auf die URL für den Sound:
         

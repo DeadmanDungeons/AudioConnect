@@ -31,6 +31,12 @@ failed:
   verify-response: '&4The verify request was rejected: &cUnexpected reason (<code>)'
   verify-invalid: '&cThe provided address did not verify as the public address for this server. Please make sure the address points to this server and is publicly accessible'
   verify-error: '&cAn unexpected error occurred while contacting AudioConnect server'
+  import-running: '&cAn import task is already in progress. Use "&o&c/ac import stop&r&c" to stop it.'
+  import-stopped: '&cNo import tasks are running'
+  import-mcjukebox-absent: '&cThe MCJukebox plugin is not installed. There is nothing to import.'
+  import-mcjukebox-nothing: '&cThe current MCJukebox installation has no configured region audio to import'
+  import-mcjukebox-error: '&cAn unexpected error occurred reading MCJukebox files'
+  import-response-401: '&4The import request was rejected: &cThe configured account credentials are invalid. Please check that your user-id and password in config.yml are correct.'
 
 succeeded:
   reloaded: 'AudioConnect config and language files have been reloaded'
@@ -38,13 +44,35 @@ succeeded:
   audio-sent-player: 'Audio <audio-id> has been sent to <player-name>'
   volume-set: 'Audio has been <state>'
   address-verified: "&7This server's public address &6<address> &7has been &averified &7with your account at <host>"
+  import-stopping: 'Stopping the current import process...'
 
 misc:
   announcement: 'Experience this server on a whole new level with integrated server audio! '
   verify-request: 'Verifying the address with your account at <host> ...'
   verify-check: 'Checking verification status...'
+  import-started: '&7Starting import of &6<import-count> &7<name> region audio files...'
+  import-progress: '&7<name> import progress: &6<percent>%'
+  import-finished: '&7<name> import has finished successfully!'
+  import-finished-errors: '&7<name> import has finished with errors'
+  import-stopped: '&7<name> import has stopped prematurely'
+  import-stopped-errors: '&7<name> import has stopped prematurely with errors'
+  import-count: 'Imported: <import-count>/<import-size> Audio Regions (<file-count> Audio Files)'
+  import-errors: '&7Errors: &c<error-count>'
+  import-info: '&6Check console logs for the full import details'
+  import-rename: 'Note: Audio IDs are generated and can be renamed from your account at <host>'
+  import-audio-list: 'Imported Audio Files: \<audio-id\> (\<audio-url\>)'
+  import-region-list: 'Imported Region Settings: \<region-id\> (\<audio-id\>)'
+  import-error-list: 'ERRORS:  \<region-id\> (\<audio-url\>)'
+  import-error-file: 'Invalid HTTP URL'
+  import-error-file-404: 'Invalid URL: File not found'
+  import-error-file-download: 'Invalid URL: File download failed'
+  import-error-file-empty: 'Invalid URL: File is empty'
+  import-error-file-large: 'Invalid URL: File is too large (Consider upgrading to premium)'
+  import-error-file-format: 'Invalid URL: File is an invalid or unsupported audio format'
+  import-error-capacity: 'Invalid URL: File would exceed storage capacity (Consider upgrading to premium)'
+  import-error-region: 'Invalid Region ID: The region does not exist'
   register-details: |
-      &7Login to the server using the address below and execute this command again to validate ownership your account
+      &7Login to the Minecraft server using the address below and execute this command again to validate ownership your account
         
         &6account.minecraftaudio.com
   connect-details: |
