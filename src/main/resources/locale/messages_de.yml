@@ -36,6 +36,7 @@ failed:
   import-mcjukebox-absent: '&cDas MCJukebox Plugin ist nicht installiert. Es gibt nichts zum importieren.'
   import-mcjukebox-nothing: '&cDas derzeitig installierte MCJukebox hat keine konfigurierte Region-Audio zum importieren.'
   import-mcjukebox-error: '&cEin unerwarteter Fehler ist beim lesen der MCJukebox Dateien aufgetreten'
+  import-response-401: '&4Die Importanforderung wurde abgelehnt: &cDie konfigurierten Account Daten sind ungültig. Bitte überprüfe dass deine USER-ID und Passwort in der config.yml korrekt sind.'
 
 succeeded:
   reloaded: 'AudioConnect Config und Sprachdateien wurden reloaded.'
@@ -43,6 +44,7 @@ succeeded:
   audio-sent-player: 'Audio <audio-id> wurde an <player-name> gesendet.'
   volume-set: 'Audio wurde <state>'
   address-verified: "&7Die Öffentliche Adresse &6<address> &7dieses Servers wurde mit deinem Account bei <host> &averifiziert."
+  import-stopping: 'Stoppen des aktuellen Importvorgangs ...'
 
 misc:
   announcement: 'Erlebe diesen Server auf einem ganz neuen Level mit integrierter Server-Audio! '

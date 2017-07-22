@@ -131,12 +131,17 @@ public class ImportCommand implements Command {
             return false;
         }
 
+        // Reset import state
+        importQueue.clear();
+        abort.set(false);
+        stop.set(false);
+
         // Initialize import status and task(s)
         int importSize = mcJukeboxRegions.size();
         ImportStatus importStatus = new ImportStatus(sender, importSize);
         ImportTask importTask = new MCJukeboxImportTask(importStatus, config);
 
-        plugin.getMessenger().sendMessage(sender, "misc.import-started", importTask.importType, importSize);
+        plugin.getMessenger().sendMessage(sender, "misc.import-started", importSize, importTask.importType);
 
         // Initialize import queue and verify audio URL before running import task
         int queueSize = 0; // regionAudioQueue.size() is not constant-time
@@ -176,6 +181,7 @@ public class ImportCommand implements Command {
             plugin.getMessenger().sendErrorMessage(sender, "failed.import-stopped");
             return false;
         }
+        plugin.getMessenger().sendMessage(sender, "succeeded.import-stopping");
         return true;
     }
 
@@ -294,7 +300,7 @@ public class ImportCommand implements Command {
             int responseCode = connection.getResponseCode();
             if (responseCode == HttpURLConnection.HTTP_UNAUTHORIZED) {
                 // abort if configured credentials are incorrect
-                abort("failed.verify-response-401", null);
+                abort("failed.import-response-401", null);
             } else {
                 cookieManager.put(importUri, connection.getHeaderFields());
 
@@ -395,13 +401,10 @@ public class ImportCommand implements Command {
                 ProtectedRegion region = regionManager.getRegion(regionId);
                 if (region != null) {
                     AudioTrack audioTrack = new AudioTrack(audioId);
-                    Set<AudioTrack> regionAudioTracks = region.getFlag(plugin.getAudioFlag());
-                    if (regionAudioTracks == null) {
-                        regionAudioTracks = new HashSet<>();
-                        regionAudioTracks.add(audioTrack);
-                        region.setFlag(plugin.getAudioFlag(), regionAudioTracks);
-                    } else if (regionAudioTracks.add(audioTrack)) {
-                        region.setDirty(true);
+                    Set<AudioTrack> audioTracks = region.getFlag(plugin.getAudioFlag());
+                    audioTracks = (audioTracks != null ? new HashSet<>(audioTracks) : new HashSet<AudioTrack>());
+                    if (audioTracks.add(audioTrack)) {
+                        region.setFlag(plugin.getAudioFlag(), audioTracks);
                     }
                     imported = true;
                 }
@@ -484,15 +487,23 @@ public class ImportCommand implements Command {
             logger.info(messenger.getMessage("misc.import-rename", false, plugin.getConfiguration().getConnectionHost()));
             logger.info("");
             logger.info(messenger.getMessage("misc.import-audio-list", false));
-            for (Map.Entry<String, String> entry : importedAudio.entrySet()) {
-                logger.info("- " + entry.getKey() + " ( " + entry.getValue() + " )");
+            if (importedAudio.isEmpty()) {
+                logger.info("  NONE");
+            } else {
+                for (Map.Entry<String, String> entry : importedAudio.entrySet()) {
+                    logger.info("- " + entry.getKey() + " ( " + entry.getValue() + " )");
+                }
             }
             logger.info("");
             logger.info(messenger.getMessage("misc.import-region-list", false));
-            for (Map.Entry<RegionAudio, String> entry : imported.entrySet()) {
-                // If an imported RegionAudio also had an error, It was a partial import and failed at the importing the region
-                if (!errors.containsKey(entry.getKey())) {
-                    logger.info("- " + entry.getKey().regionId + " (" + entry.getValue() + ")");
+            if (imported.isEmpty()) {
+                logger.info("  NONE");
+            } else {
+                for (Map.Entry<RegionAudio, String> entry : imported.entrySet()) {
+                    // If an imported RegionAudio also had an error, It was a partial import and failed at the importing the region
+                    if (!errors.containsKey(entry.getKey())) {
+                        logger.info("- " + entry.getKey().regionId + " (" + entry.getValue() + ")");
+                    }
                 }
             }
             logger.info("");
