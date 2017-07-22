@@ -12,6 +12,7 @@ import com.deadmandungeons.deadmanplugin.command.CommandInfo;
 import com.deadmandungeons.deadmanplugin.command.SubCommandInfo;
 import com.google.common.io.BaseEncoding;
 import com.google.common.net.HttpHeaders;
+import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
@@ -24,6 +25,7 @@ import org.bukkit.event.server.ServerListPingEvent;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.CookieManager;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -31,6 +33,9 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Level;
 
@@ -120,12 +125,15 @@ public class VerifyCommand implements Command, Listener {
         private static final String USER_AGENT = "AudioConnect";
         private static final String CHARSET = "UTF-8";
 
+        private final CookieManager cookieManager = new CookieManager();
+
         private final UUID playerId;
         private final String address;
         private final long startTime;
 
         private final String credentials;
         private final URL verifyUrl;
+        private final URI verifyUri;
 
         private volatile String verifyCode;
         private volatile String encodedVerifyCode;
@@ -143,7 +151,8 @@ public class VerifyCommand implements Command, Listener {
                 UUID serverId = config.getConnectionServerId();
 
                 verifyUrl = new URL(baseUrl + String.format(VERIFY_PATH, ConnectUtils.encodeUuidBase64(serverId)));
-            } catch (MalformedURLException e) {
+                verifyUri = verifyUrl.toURI();
+            } catch (MalformedURLException | URISyntaxException e) {
                 throw new IllegalStateException("Invalid server verify URL", e);
             }
         }
@@ -165,17 +174,23 @@ public class VerifyCommand implements Command, Listener {
                 byte[] data = requestParams.getBytes(CHARSET);
 
                 HttpURLConnection connection = (HttpURLConnection) verifyUrl.openConnection();
+                connection.setUseCaches(false);
+                connection.setDoOutput(true);
+
                 connection.setRequestMethod("POST");
                 connection.setRequestProperty(HttpHeaders.USER_AGENT, USER_AGENT);
                 connection.setRequestProperty(HttpHeaders.AUTHORIZATION, "Basic " + credentials);
                 connection.setRequestProperty(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded");
                 connection.setRequestProperty(HttpHeaders.CONTENT_LENGTH, String.valueOf(data.length));
-                connection.setUseCaches(false);
-                connection.setDoOutput(true);
+                // CookieManager requires this non-null requestHeaders parameter but never uses it...
+                Map<String, List<String>> emptyRequestHeaders = Collections.emptyMap();
+                for (Map.Entry<String, List<String>> cookieHeader : cookieManager.get(verifyUri, emptyRequestHeaders).entrySet()) {
+                    connection.setRequestProperty(cookieHeader.getKey(), StringUtils.join(cookieHeader.getValue(), ";"));
+                }
 
                 connection.getOutputStream().write(data);
 
-                final int responseCode = connection.getResponseCode();
+                int responseCode = connection.getResponseCode();
                 if (responseCode == HttpURLConnection.HTTP_ACCEPTED) {
                     try (BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
                         // Read only the first line (server should only respond with the verify code in response body)
@@ -184,6 +199,8 @@ public class VerifyCommand implements Command, Listener {
                         // so that it is invisible when injected into the MOTD during server ping
                         encodedVerifyCode = AudioConnectUtils.encodeFormattingCodes(verifyCode);
                     }
+
+                    cookieManager.put(verifyUri, connection.getHeaderFields());
 
                     long expireTimeDefault = startTime + VERIFY_EXPIRE_MILLIS;
                     long expireTime = connection.getHeaderFieldDate(HttpHeaders.EXPIRES, expireTimeDefault);

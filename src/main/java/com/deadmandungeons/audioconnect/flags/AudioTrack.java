@@ -13,7 +13,15 @@ public class AudioTrack {
     private final String trackId;
     private final DayTime dayTime;
 
-    AudioTrack(String audioId, String trackId, DayTime dayTime) {
+    public AudioTrack(String audioId) {
+        this(audioId, null, null);
+    }
+
+    public AudioTrack(String audioId, String trackId) {
+        this(audioId, trackId, null);
+    }
+
+    public AudioTrack(String audioId, String trackId, DayTime dayTime) {
         this.audioId = audioId;
         this.trackId = trackId;
         this.dayTime = dayTime;

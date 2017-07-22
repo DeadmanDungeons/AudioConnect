@@ -32,8 +32,8 @@ connection:
     # The host of the AudioConnect webserver
     host: minecraftaudio.com
 
-    # The port of the AudioConnect websocket endpoint
-    websocket-port: 3030
+    # The port of the AudioConnect websocket endpoint (alternative 3030)
+    websocket-port: 8090
 
     # The port of the AudioConnect webapp endpoint
     webapp-port: 80
