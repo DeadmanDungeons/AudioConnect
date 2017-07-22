@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.deadmandungeons</groupId>
     <artifactId>audio-connect</artifactId>
-    <version>1.3.0-SNAPSHOT</version>
+    <version>1.3.0</version>
     <name>AudioConnect</name>
 
     <build>
