@@ -24,6 +24,7 @@ import com.sk89q.worldguard.protection.flags.DefaultFlag;
 import com.sk89q.worldguard.protection.flags.Flag;
 import com.sk89q.worldguard.protection.flags.SetFlag;
 import com.sk89q.worldguard.protection.managers.RegionManager;
+import com.sk89q.worldguard.protection.managers.storage.StorageException;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
@@ -59,7 +60,7 @@ import java.util.regex.Pattern;
 public final class AudioConnect extends DeadmanPlugin {
 
     private final Config config = new Config();
-    private final AudioList audioList = new AudioList(getLogger());
+    private final AudioList audioList = new AudioList(getLogger(), new AudioUpdateHandler());
     private final boolean spigot;
 
     private WorldGuardPlugin worldGuard;
@@ -244,6 +245,82 @@ public final class AudioConnect extends DeadmanPlugin {
         }
 
     }
+
+
+    private class AudioUpdateHandler implements AudioList.UpdateHandler {
+
+        @Override
+        public void deleteAll(Set<String> audioIds) {
+            List<RegionManager> regionManagers = WorldGuardPlugin.inst().getRegionContainer().getLoaded();
+            for (RegionManager regionManager : regionManagers) {
+                for (ProtectedRegion region : regionManager.getRegions().values()) {
+                    Set<AudioTrack> audioTracks = region.getFlag(audioFlag);
+                    if (audioTracks != null) {
+                        boolean removedAudio = false;
+                        Set<AudioTrack> newAudioTracks = null;
+                        for (AudioTrack audioTrack : audioTracks) {
+                            if (!audioIds.contains(audioTrack.getAudioId())) {
+                                if (newAudioTracks == null) {
+                                    newAudioTracks = new HashSet<>(audioTracks.size());
+                                }
+                                newAudioTracks.add(audioTrack);
+                            } else {
+                                removedAudio = true;
+                            }
+                        }
+                        if (removedAudio) {
+                            region.setFlag(audioFlag, newAudioTracks);
+                        }
+                    }
+                }
+            }
+            for (RegionManager regionManager : regionManagers) {
+                try {
+                    regionManager.saveChanges();
+                } catch (StorageException e) {
+                    getLogger().log(Level.WARNING, "Failed to save '" + regionManager + "' WorldGuard region changes from audio deletion");
+                }
+            }
+            for (String audioId : audioIds) {
+                getLogger().info("Removed audio '" + audioId + "' from all WorldGuard regions.");
+            }
+        }
+
+        @Override
+        public void replace(String audioId, String newAudioId) {
+            List<RegionManager> regionManagers = WorldGuardPlugin.inst().getRegionContainer().getLoaded();
+            for (RegionManager regionManager : regionManagers) {
+                for (ProtectedRegion region : regionManager.getRegions().values()) {
+                    Set<AudioTrack> audioTracks = region.getFlag(audioFlag);
+                    if (audioTracks != null) {
+                        boolean replacedAudio = false;
+                        Set<AudioTrack> newAudioTracks = new HashSet<>(audioTracks.size());
+                        for (AudioTrack audioTrack : audioTracks) {
+                            if (audioTrack.getAudioId().equals(audioId)) {
+                                newAudioTracks.add(new AudioTrack(newAudioId, audioTrack.getTrackId(), audioTrack.getDayTime()));
+                                replacedAudio = true;
+                            } else {
+                                newAudioTracks.add(audioTrack);
+                            }
+                        }
+                        if (replacedAudio) {
+                            region.setFlag(audioFlag, newAudioTracks);
+                        }
+                    }
+                }
+            }
+            for (RegionManager regionManager : regionManagers) {
+                try {
+                    regionManager.saveChanges();
+                } catch (StorageException e) {
+                    getLogger().log(Level.WARNING, "Failed to save '" + regionManager + "' WorldGuard region changes from audio replacement");
+                }
+            }
+            getLogger().info("Replaced audio '" + audioId + "' with '" + newAudioId + "' in all occurring WorldGuard regions.");
+        }
+
+    }
+
 
     private class PlayerAudioTracker implements PlayerAudioDataWriter {
 

@@ -565,6 +565,15 @@ public class AudioConnectClient {
                         audioList.removeAll(audioListMessage.getAudioIds());
                         break;
                     }
+                    case DELETE: {
+                        audioList.deleteAll(audioListMessage.getAudioIds());
+                        break;
+                    }
+                    case REPLACE: {
+                        String[] audioIds = audioListMessage.getAudioIds().toArray(new String[2]);
+                        audioList.replace(audioIds[0], audioIds[1]);
+                        break;
+                    }
                 }
             } else if (message instanceof StatusMessage) {
                 StatusMessage statusMessage = (StatusMessage) message;

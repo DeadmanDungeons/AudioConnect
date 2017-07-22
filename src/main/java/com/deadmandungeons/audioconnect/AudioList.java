@@ -2,7 +2,6 @@ package com.deadmandungeons.audioconnect;
 
 import com.google.common.collect.Sets;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -21,9 +20,11 @@ public class AudioList {
     private final Set<String> audioIds = Sets.newConcurrentHashSet();
 
     private final Logger logger;
+    private final UpdateHandler updateHandler;
 
-    AudioList(Logger logger) {
+    AudioList(Logger logger, UpdateHandler updateHandler) {
         this.logger = logger;
+        this.updateHandler = updateHandler;
     }
 
     /**
@@ -35,10 +36,9 @@ public class AudioList {
      */
     public boolean contains(String audioId) {
         if (!audioIds.contains(audioId)) {
-            long now = System.currentTimeMillis();
-            Long lastWarnTime = invalidIds.get(audioId);
-            if (lastWarnTime == null || lastWarnTime < now - WARNING_DELAY_MILLIS) {
-                invalidIds.put(audioId, now);
+            long currentTime = System.currentTimeMillis();
+            Long lastWarnTime = invalidIds.putIfAbsent(audioId, currentTime);
+            if (lastWarnTime == null || lastWarnTime < currentTime - WARNING_DELAY_MILLIS) {
                 logger.warning("Invalid Identifier: ID '" + audioId + "' was referenced for an audio source that does not exist");
             }
             return false;
@@ -60,12 +60,35 @@ public class AudioList {
         return audioIds.isEmpty();
     }
 
-    boolean addAll(Collection<String> audioIds) {
-        return this.audioIds.addAll(audioIds);
+    boolean addAll(Set<String> audioIds) {
+        boolean updated = this.audioIds.addAll(audioIds);
+        invalidIds.keySet().removeAll(audioIds);
+        return updated;
     }
 
-    boolean removeAll(Collection<String> audioIds) {
+    boolean removeAll(Set<String> audioIds) {
         return this.audioIds.removeAll(audioIds);
+    }
+
+    boolean deleteAll(Set<String> audioIds) {
+        boolean updated = removeAll(audioIds);
+        updateHandler.deleteAll(audioIds);
+        return updated;
+    }
+
+    void replace(String audioId, String newAudioId) {
+        audioIds.remove(audioId);
+        audioIds.add(newAudioId);
+        invalidIds.remove(newAudioId);
+        updateHandler.replace(audioId, newAudioId);
+    }
+
+    public interface UpdateHandler {
+
+        void deleteAll(Set<String> audioIds);
+
+        void replace(String audioId, String newAudioId);
+
     }
 
 }
