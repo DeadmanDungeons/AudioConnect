@@ -546,7 +546,14 @@ public class AudioConnectClient {
                 }
 
                 for (Message message : messages) {
-                    handleMessage(ctx, message);
+                    try {
+                        message.validate();
+
+                        handleMessage(ctx, message);
+                    } catch (Messenger.InvalidDataException e) {
+                        String msg = "Received invalid or unsupported %s message from AudioConnect server: %s";
+                        logger.warning(String.format(msg, message.getType(), e.getMessage()));
+                    }
                 }
             } else {
                 logger.warning("Received unexpected websocket frame from AudioConnect server: " + frame);
