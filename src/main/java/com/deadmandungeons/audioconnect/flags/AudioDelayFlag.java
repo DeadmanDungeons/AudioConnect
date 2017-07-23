@@ -60,7 +60,7 @@ public class AudioDelayFlag extends Flag<AudioDelay> implements FlagHandler<Audi
                     throw new InvalidFlagFormat("track " + e.getMessage());
                 }
             } else {
-                throw new InvalidFlagFormat("Duplicate or unkown AudioDelay property '" + key + "'");
+                throw new InvalidFlagFormat("Duplicate or unknown AudioDelay property '" + key + "'");
             }
         }
         if (delayTime == null) {

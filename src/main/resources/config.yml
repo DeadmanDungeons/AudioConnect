@@ -21,7 +21,7 @@ connection:
   # The ID for this server (Generated for each server added to your account)
   server-id: ''
 
-  # NOTICE: These values will most likely never need to be changed and probably shouln't
+  # NOTICE: These values will most likely never need to be changed and probably shouldn't
   endpoint:
     # The boolean flag indicating whether to establish a secure (SSL/TLS)
     # connection with the AudioConnect webserver endpoint.
@@ -44,10 +44,10 @@ connection:
 
 # Configure settings for reconnecting to the AudioConnect server in the
 # event of an unexpected disconnect.
-# If the reason for the disconnect was because the server refused the conneciton,
+# If the reason for the disconnect was because the server refused the connection,
 # or if the client was manually disconnected, the client will not attempt to reconnect.
 reconnect:
-  # The number of miliseconds to delay before attempting to reconnect
+  # The number of milliseconds to delay before attempting to reconnect
   interval: 3000
 
   # The maximum number of milliseconds to delay a reconnect attempt
@@ -72,7 +72,7 @@ options:
   # Prevents a player from executing any AudioConnect command too quickly.
   command-cooldown: 5
 
-  # The frequency in secconds to send an announcement message the to non-connected players.
+  # The frequency in seconds to send an announcement message the to non-connected players.
   # The announcement message is defined in the language file at:
   #   misc.announcement
   #   misc.connect-details
