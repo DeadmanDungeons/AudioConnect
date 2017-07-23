@@ -124,7 +124,7 @@ public final class AudioConnect extends DeadmanPlugin {
 
         getCommand("ac").setExecutor(new CommandHandler(this, messenger, config.getCommandCooldown()));
 
-        Bukkit.getScheduler().runTaskTimer(this, new ConnectAnouncement(), 0, config.getAnnounceFrequency() * 20);
+        Bukkit.getScheduler().runTaskTimer(this, new ConnectAnnouncement(), 0, config.getAnnounceFrequency() * 20);
 
         client = new AudioConnectClient(this, config, audioList, new PlayerAudioTracker());
 
@@ -210,7 +210,7 @@ public final class AudioConnect extends DeadmanPlugin {
     }
 
 
-    private class ConnectAnouncement implements Runnable {
+    private class ConnectAnnouncement implements Runnable {
 
         @Override
         public void run() {

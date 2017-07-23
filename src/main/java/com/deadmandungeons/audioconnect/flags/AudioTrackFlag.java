@@ -76,7 +76,7 @@ public class AudioTrackFlag extends Flag<AudioTrack> implements FlagHandler<Audi
                     throw new InvalidFlagFormat("AudioTrack time property must be one of " + StringUtils.join(DayTime.VALUES, ", "));
                 }
             } else {
-                throw new InvalidFlagFormat("Duplicate or unkown AudioTrack property '" + key + "'");
+                throw new InvalidFlagFormat("Duplicate or unknown AudioTrack property '" + key + "'");
             }
         }
         if (audioId == null) {

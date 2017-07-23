@@ -31,6 +31,14 @@ failed:
   verify-response: '&4La vérifcation a été rejetée: &cRaison inattendue (<code>) !'
   verify-invalid: '&cL''adresse fournie n''est pas vérifiée comme l''adresse publique pour ce serveur !'
   verify-error: '&cUne erreur inattendue est arrivée en entrant en contact avec le serveur d''AudioConnect !'
+  # --- UNTRANSLATED BEGIN ---
+  import-running: '&cAn import task is already in progress. Use "&o&c/ac import stop&r&c" to stop it.'
+  import-stopped: '&cNo import tasks are running'
+  import-mcjukebox-absent: '&cThe MCJukebox plugin is not installed. There is nothing to import.'
+  import-mcjukebox-nothing: '&cThe current MCJukebox installation has no configured region audio to import'
+  import-mcjukebox-error: '&cAn unexpected error occurred reading MCJukebox files'
+  import-response-401: '&4The import request was rejected: &cThe configured account credentials are invalid. Please check that your user-id and password in config.yml are correct.'
+  # --- UNTRANSLATED END ---
 
 succeeded:
   reloaded: 'La configuration et les fichiers de langue de AudioConnect ont été rechargées !'
@@ -38,11 +46,37 @@ succeeded:
   audio-sent-player: 'Le fichier Audio <audio-id> a été envoyé au joueur <player-name> !'
   volume-set: 'Le fichier Audio a été mis à <state> !'
   address-verified: "&7L'adresse publique du serveur &6<address> &7a été &avérifiée pour ton compte <host> !"
+  # --- UNTRANSLATED BEGIN ---
+  import-stopping: 'Stopping the current import process...'
+  # --- UNTRANSLATED END ---
 
 misc:
   announcement: 'Améliore ton expérience de jeu avec une toute nouvelle nouveauté qui est l''intégration Audio (une Radio !) ! :D'
   verify-request: 'Vérification de l''adresse pour ton compte <host> ...'
   verify-check: 'Vérification du statut de vérification...'
+  # --- UNTRANSLATED BEGIN ---
+  import-started: '&7Starting import of &6<import-count> &7<name> region audio files...'
+  import-progress: '&7<name> import progress: &6<percent>%'
+  import-finished: '&7<name> import has finished successfully!'
+  import-finished-errors: '&7<name> import has finished with errors'
+  import-stopped: '&7<name> import has stopped prematurely'
+  import-stopped-errors: '&7<name> import has stopped prematurely with errors'
+  import-count: 'Imported: <import-count>/<import-size> Audio Regions (<file-count> Audio Files)'
+  import-errors: '&7Errors: &c<error-count>'
+  import-info: '&6Check console logs for the full import details'
+  import-rename: 'Note: Audio IDs are generated and can be renamed from your account at <host>'
+  import-audio-list: 'Imported Audio Files: \<audio-id\> (\<audio-url\>)'
+  import-region-list: 'Imported Region Settings: \<region-id\> (\<audio-id\>)'
+  import-error-list: 'ERRORS:  \<region-id\> (\<audio-url\>)'
+  import-error-file: 'Invalid HTTP URL'
+  import-error-file-404: 'Invalid URL: File not found'
+  import-error-file-download: 'Invalid URL: File download failed'
+  import-error-file-empty: 'Invalid URL: File is empty'
+  import-error-file-large: 'Invalid URL: File is too large (Consider upgrading to premium)'
+  import-error-file-format: 'Invalid URL: File is an invalid or unsupported audio format'
+  import-error-capacity: 'Invalid URL: File would exceed storage capacity (Consider upgrading to premium)'
+  import-error-region: 'Invalid Region ID: The region does not exist'
+  # --- UNTRANSLATED END ---
   register-details: |
       &7Connecte-toi au serveur en utilisant l'adresse ci-dessous et exécute cette commande de nouveau pour valider la propriété votre compte
 
@@ -50,6 +84,6 @@ misc:
   connect-details: |
       &7Clique sur cette URL pour écouter:
 
-        &6<connect-url>
+      &6<connect-url>
   top-bar: '&8\<&m------------------&r&6 Connexion Audio &8&m------------------&r&8\>'
   bottom-bar: '&8\<&m---------------------------------------------------&r&8\>'
