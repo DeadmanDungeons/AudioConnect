@@ -485,7 +485,7 @@ public class AudioConnectClient {
                 finishHandshake(ctx, (FullHttpResponse) msg);
             } else {
                 if (!(msg instanceof WebSocketFrame)) {
-                    logger.warning("Recieved unexpected raw message from AudioConnect server: " + msg);
+                    logger.warning("Received unexpected raw message from AudioConnect server: " + msg);
                     return;
                 }
 
@@ -528,10 +528,10 @@ public class AudioConnectClient {
             if (frame instanceof PingWebSocketFrame) {
                 ctx.writeAndFlush(new PongWebSocketFrame(frame.content().retain()), ctx.voidPromise());
             } else if (frame instanceof PongWebSocketFrame) {
-                logger.info("Recieved pong from AudioConnect server");
+                logger.info("Received pong from AudioConnect server");
             } else if (frame instanceof CloseWebSocketFrame) {
                 CloseWebSocketFrame closeFrame = (CloseWebSocketFrame) frame;
-                logger.info("Recieved closing from AudioConnect server: [" + closeFrame.statusCode() + "] " + closeFrame.reasonText());
+                logger.info("Received closing from AudioConnect server: [" + closeFrame.statusCode() + "] " + closeFrame.reasonText());
 
                 ctx.close();
             } else if (frame instanceof TextWebSocketFrame) {
@@ -541,15 +541,22 @@ public class AudioConnectClient {
                 try {
                     messages = messenger.deserialize(textFrame.text());
                 } catch (MessageParseException e) {
-                    logger.warning("Failed to parse Message recieved from AudioConnect server: " + e.getMessage());
+                    logger.warning("Failed to parse Message received from AudioConnect server: " + e.getMessage());
                     return;
                 }
 
                 for (Message message : messages) {
-                    handleMessage(ctx, message);
+                    try {
+                        message.validate();
+
+                        handleMessage(ctx, message);
+                    } catch (Messenger.InvalidDataException e) {
+                        String msg = "Received invalid or unsupported %s message from AudioConnect server: %s";
+                        logger.warning(String.format(msg, message.getType(), e.getMessage()));
+                    }
                 }
             } else {
-                logger.warning("Recieved unexpected websocket frame from AudioConnect server: " + frame);
+                logger.warning("Received unexpected websocket frame from AudioConnect server: " + frame);
             }
         }
 
@@ -623,7 +630,7 @@ public class AudioConnectClient {
                     writeAndFlush(ctx.channel(), message);
                 }
             } else {
-                logger.warning("Recieved unexpected Message type from AudioConnect server '" + message.getType() + "'");
+                logger.warning("Received unexpected Message type from AudioConnect server '" + message.getType() + "'");
             }
         }
 
