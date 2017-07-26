@@ -48,7 +48,7 @@ public final class AudioConnect extends DeadmanPlugin {
 
     private final AudioConnectConfig config = new AudioConnectConfig();
     private final AudioList audioList = new AudioList(getLogger(), new AudioUpdateHandler());
-    private final boolean spigot;
+    private final boolean spigot = checkClass("org.spigotmc.SpigotConfig");
 
     private WorldGuardPlugin worldGuard;
     private SetFlag<AudioTrack> audioFlag;
@@ -64,16 +64,6 @@ public final class AudioConnect extends DeadmanPlugin {
         return getDeadmanPlugin(AudioConnect.class);
     }
 
-    public AudioConnect() {
-        boolean spigot = true;
-        try {
-            // Check if the server is running on Spigot and thus the Spigot API is available
-            Class.forName("org.spigotmc.SpigotConfig");
-        } catch (ClassNotFoundException e) {
-            spigot = false;
-        }
-        this.spigot = spigot;
-    }
 
     @Override
     protected void onPluginLoad() {
@@ -95,19 +85,7 @@ public final class AudioConnect extends DeadmanPlugin {
             audioDelayFlag = new SetFlag<>("audio-delay", AudioDelayFlag.createLegacy());
 
             try {
-                Flag<?>[] flagsList = DefaultFlag.flagsList;
-
-                Field flagsListField = DefaultFlag.class.getField("flagsList");
-                Field modifiersField = Field.class.getDeclaredField("modifiers");
-                modifiersField.setAccessible(true);
-                modifiersField.setInt(flagsListField, flagsListField.getModifiers() & ~Modifier.FINAL);
-
-                Flag<?>[] newFlagsList = new Flag<?>[flagsList.length + 2];
-                System.arraycopy(flagsList, 0, newFlagsList, 0, flagsList.length);
-                newFlagsList[flagsList.length] = audioFlag;
-                newFlagsList[flagsList.length + 1] = audioDelayFlag;
-
-                flagsListField.set(null, newFlagsList);
+                injectWorldGuardFlags(audioFlag, audioDelayFlag);
 
                 getLogger().info("Successfully adjusted for compatibility with the current WorldGuard version");
             } catch (Exception e2) {
@@ -207,6 +185,31 @@ public final class AudioConnect extends DeadmanPlugin {
         String encodedPlayerId = ConnectUtils.encodeUuidBase64(playerId);
 
         return webappUrl + "/connect?s=" + serverId + "&u=" + encodedPlayerId;
+    }
+
+
+    private static boolean checkClass(String className) {
+        try {
+            Class.forName(className);
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
+    }
+
+    private static void injectWorldGuardFlags(Flag<?>... flags) throws Exception {
+        Flag<?>[] flagsList = DefaultFlag.flagsList;
+
+        Field flagsListField = DefaultFlag.class.getField("flagsList");
+        Field modifiersField = Field.class.getDeclaredField("modifiers");
+        modifiersField.setAccessible(true);
+        modifiersField.setInt(flagsListField, flagsListField.getModifiers() & ~Modifier.FINAL);
+
+        Flag<?>[] newFlagsList = new Flag<?>[flagsList.length + flags.length];
+        System.arraycopy(flagsList, 0, newFlagsList, 0, flagsList.length);
+        System.arraycopy(flags, 0, newFlagsList, flagsList.length, flags.length);
+
+        flagsListField.set(null, newFlagsList);
     }
 
 
