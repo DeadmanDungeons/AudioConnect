@@ -5,6 +5,7 @@ author: Weasel_Squeezer
 website: https://minecraftaudio.com
 
 depend: [WorldGuard]
+softdepend: [ProtocolLib]
 
 commands:
     ac:

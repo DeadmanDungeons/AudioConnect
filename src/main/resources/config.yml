@@ -65,7 +65,7 @@ reconnect:
 # Configure other various plugin options
 options:
   # The locale language code to use for messages.
-  # Supported locales: 'en' (english), 'de' (german), 'fr' (french)
+  # Supported locales: 'en' (english), 'de' (german), 'fr' (french), 'es' (spanish)
   locale: 'en'
 
   # The Amount of time in seconds from the last executed command.
