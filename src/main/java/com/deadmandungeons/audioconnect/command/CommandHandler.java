@@ -1,6 +1,7 @@
 package com.deadmandungeons.audioconnect.command;
 
 import com.deadmandungeons.audioconnect.AudioConnect;
+import com.deadmandungeons.audioconnect.command.verify.VerifyCommand;
 import com.deadmandungeons.audioconnect.messages.AudioCommandMessage;
 import com.deadmandungeons.audioconnect.messages.AudioCommandMessage.AudioCommand;
 import com.deadmandungeons.deadmanplugin.Messenger;

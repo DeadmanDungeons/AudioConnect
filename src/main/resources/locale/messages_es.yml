@@ -1,0 +1,83 @@
+# Plugin Messages File
+# Language: Spanish
+# Author: altrisi
+#
+# Recognized formatting codes:
+#   http://www.minecraftwiki.net/wiki/Formatting_codes
+
+
+# if a message does not define any formatting, these colors will be used
+primary-color: '&6'   # Used for message variables
+secondary-color: '&7' # Used for message text
+tertiary-color: '&8'  # Used for message block boundaries
+
+failed:
+  invalid-args: '&cArgumentos inválidos. Usa "/ac help" para una lista de comandos'
+  invalid-args-alt: '&cArgumentos inválidos. El uso correcto es el siguiente:'
+  no-permission: '&cNo tienes permiso para ejecutar ese comando'
+  not-connected: '&cNo estás conectado al stream de audio de este servidor. Conecta usando /audio'
+  no-players-connected: '&cNo hay ningun jugador conectado actualmente al stream de audio de este servidor'
+  player-not-connected: '&c<player-name> no está conectado al stream de audio de este servidor'
+  client-disconnected: '&cEste servidor está actualmente desconectado de AudioConnect'
+  audio-not-added: 'Un audio con esa ID no ha sido añadido a tu cuenta'
+  invalid-audio-id: "&cID del audio '<audio-id>' inválida : <reason>"
+  invalid-track-id: "&cID de canción '<track-id>' inválida: <reason>"
+  invalid-delay-range: '&cEl retardo del audio <delay-range> es inválido. Los formatos válidos son ''\<min\>-\<max\>'' o ''\<constant\>'''
+  verify-invalid-config: '&4Configuración inválida: &cLa cuenta de AudioConnect y la información del servidor debe ser configurada'
+  verify-invalid-address: '&cSintaxis de la dirección inválida'
+  verify-in-progress: '&cYa está en progreso una petición de validación'
+  verify-response-401: '&4La petición de verificación fue rechazada: &cLas credenciales de la cuenta son inválidas. Comprueba que el usuario y contraseña en el config.yml sean correctos.'
+  verify-response-404: '&4La petición de verificación fue rechazada: &cTu cuenta no tiene un servidor configurado con ese server-id. Por favor comprueba que las variables de conexión en config.yml sean correctas.'
+  verify-response-409: '&4La petición de verificación fue rechazada: &cLa dirección proporcionada ya ha sido verificada para otro servidor'
+  verify-response: '&4La petición de verificación fue rechazada: &cRazón inesperada (<code>)'
+  verify-invalid: '&cLa dirección proporcionada no se corresponde con la dirección pública de este servidor. Asegúrate de que la dirección apunte a este servidor y sea públicamente accesible'
+  verify-error: '&cHa ocurrido un error inesperado intentando conectar al servidor de AudioConnect'
+  import-running: '&cYa hay una tarea de importación en progreso. Usa "&o&c/ac import stop&r&c" para detenerla.'
+  import-stopped: '&cNo hay ninguna tarea de importación en progreso'
+  import-mcjukebox-absent: '&cEl plugin MCJukebox no está instalado. No hay nada para importar.'
+  import-mcjukebox-nothing: '&cLa instalación de MCJukebox actual no tiene regiones de audio configuradas para importarlas'
+  import-mcjukebox-error: '&cHa ocurrido un error inesperado al leer los archivos de MCJukebox'
+  import-response-401: '&4La petición de importación fue rechazada: &cLos credenciales de la cuenta son inválidas. Comprueba que el usuario y contraseña en el config.yml sean correctos.'
+
+succeeded:
+  reloaded: 'La configuración y los lenguajes de AudioConnect han sido recargados'
+  audio-sent-all: 'El Audio <audio-id> ha sido enviado a todos los jugadores conectados'
+  audio-sent-player: 'El Audio <audio-id> ha sido enviado a <player-name>'
+  volume-set: 'El Audio ha sido <state>'
+  address-verified: "&7La dirección pública de este servidor (&6<address>&7) ha sido &averificada &7con tu cuenta en <host>"
+
+misc:
+  announcement: '¡Propulsa tu experiencia en este servidor a un nivel completamente nuevo con audio integrado en el servidor! '
+  verify-request: 'Verificando la dirección con tu cuenta en <host> ...'
+  verify-check: 'Comprobando estado de la verificación...'
+  import-started: '&7Iniciando la importación de &6<import-count> &7<name> archivos de audio por región...'
+  import-progress: '&7Progreso de la importación de <name>: &6<percent>%'
+  import-finished: '&7¡La importación de <name> ha finalizado con éxito!'
+  import-finished-errors: '&7La importación de <name> ha finalizado con errores'
+  import-stopped: '&7La importación de <name> ha sido detenida prematuramente'
+  import-stopped-errors: '&7La importación de <name> ha sido detenida prematuramente con errores'
+  import-count: 'Importados: <import-count>/<import-size> Regiones con audio (<file-count> Archivos de Audio)'
+  import-errors: '&7Errores: &c<error-count>'
+  import-info: '&6Consulta los registros de la consola para ver todos los detalles de la importación'
+  import-rename: 'Nota: Las IDs de audio se han generado y pueden ser renombradas en tu cuenta en <host>'
+  import-audio-list: 'Archivos de audio importados: \<audio-id\> (\<audio-url\>)'
+  import-region-list: 'Configuración de regiones importadas: \<region-id\> (\<audio-id\>)'
+  import-error-list: 'ERRORES:  \<region-id\> (\<audio-url\>)'
+  import-error-file: 'URL HTTP Inválida'
+  import-error-file-404: 'URL Inválida: Archivo no encontrada'
+  import-error-file-download: 'URL Inválida: Descarga del archivo fallida'
+  import-error-file-empty: 'URL Inválida: El archivo está vacío'
+  import-error-file-large: 'URL Inválida: El archivo es demasiado grande (Considera mejorar a premium)'
+  import-error-file-format: 'URL Inválida: El archivo es inválido o el tipo de archivo no es soportado'
+  import-error-capacity: 'URL Inválida: El archivo excedería el máximo de espacio (Considera mejorar a premium)'
+  import-error-region: 'ID de la región inválida: La región no existe'
+  register-details: |
+      &7Inicia sesión al servidor de Minecraft usando la dirección de debajo y ejecuta este comando de nuevo para validar la propiedad de tu cuenta
+        
+        &6account.minecraftaudio.com
+  connect-details: |
+      &7Haz clic en el siguiente enlace para conectar:
+        
+      &6<connect-url>
+  top-bar: '&8\<&m-------------------&r&6 Audio Connect &8&m-------------------&r&8\>'
+  bottom-bar: '&8\<&m---------------------------------------------------&r&8\>'
