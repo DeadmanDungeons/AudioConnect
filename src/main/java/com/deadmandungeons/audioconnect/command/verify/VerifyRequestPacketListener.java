@@ -9,11 +9,12 @@ import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import com.comphenix.protocol.wrappers.WrappedServerPing;
 import com.deadmandungeons.audioconnect.AudioConnect;
 import com.google.common.base.Supplier;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import org.bukkit.ChatColor;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
-import java.util.Map;
+import java.util.logging.Level;
 
 /**
  * Inject the verify code into the MOTD from the outgoing server status packet.
@@ -21,11 +22,8 @@ import java.util.Map;
  */
 class VerifyRequestPacketListener implements VerifyCommand.VerifyRequestListener {
 
-    private static final TypeToken<Map<String, Object>> JSON_MAP = new TypeToken<Map<String, Object>>() {
-    };
-
     private final AudioConnect ac = AudioConnect.getInstance();
-    private final Gson gson = new Gson();
+    private final JSONParser jsonParser = new JSONParser();
 
     private final PacketAdapter packetListener = new StatusPacketListener();
     private final Supplier<String> verifyCodeSupplier;
@@ -54,12 +52,16 @@ class VerifyRequestPacketListener implements VerifyCommand.VerifyRequestListener
         public void onPacketSending(PacketEvent event) {
             String verifyCode = verifyCodeSupplier.get();
             if (verifyCode != null) {
-                WrappedServerPing ping = event.getPacket().getServerPings().read(0);
+                try {
+                    WrappedServerPing ping = event.getPacket().getServerPings().read(0);
 
-                Map<String, Object> motd = gson.fromJson(ping.getMotD().getJson(), JSON_MAP.getType());
-                motd.put("text", verifyCode + ChatColor.RESET + motd.get("text"));
+                    JSONObject motd = (JSONObject) jsonParser.parse(ping.getMotD().getJson());
+                    motd.put("text", verifyCode + ChatColor.RESET + motd.get("text"));
 
-                ping.setMotD(WrappedChatComponent.fromJson(gson.toJson(motd)));
+                    ping.setMotD(WrappedChatComponent.fromJson(motd.toJSONString()));
+                } catch (ParseException e) {
+                    ac.getLogger().log(Level.WARNING, "Failed to parse MOTD for verify request", e);
+                }
             }
         }
 
