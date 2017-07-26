@@ -55,10 +55,15 @@ class VerifyRequestPacketListener implements VerifyCommand.VerifyRequestListener
                 try {
                     WrappedServerPing ping = event.getPacket().getServerPings().read(0);
 
-                    JSONObject motd = (JSONObject) jsonParser.parse(ping.getMotD().getJson());
-                    motd.put("text", verifyCode + ChatColor.RESET + motd.get("text"));
-
-                    ping.setMotD(WrappedChatComponent.fromJson(motd.toJSONString()));
+                    Object motd = jsonParser.parse(ping.getMotD().getJson());
+                    if (motd instanceof JSONObject) {
+                        JSONObject component = (JSONObject) motd;
+                        component.put("text", verifyCode + ChatColor.RESET + component.get("text"));
+                        ping.setMotD(WrappedChatComponent.fromJson(component.toJSONString()));
+                    } else {
+                        // Legacy String format
+                        ping.setMotD(verifyCode + ChatColor.RESET + motd);
+                    }
                 } catch (ParseException e) {
                     ac.getLogger().log(Level.WARNING, "Failed to parse MOTD for verify request", e);
                 }
