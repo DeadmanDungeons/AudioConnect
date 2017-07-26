@@ -1,4 +1,4 @@
-package com.deadmandungeons.audioconnect.command;
+package com.deadmandungeons.audioconnect.command.verify;
 
 import com.deadmandungeons.audioconnect.AudioConnect;
 import com.deadmandungeons.audioconnect.AudioConnectConfig;
@@ -10,20 +10,16 @@ import com.deadmandungeons.deadmanplugin.command.Arguments;
 import com.deadmandungeons.deadmanplugin.command.Command;
 import com.deadmandungeons.deadmanplugin.command.CommandInfo;
 import com.deadmandungeons.deadmanplugin.command.SubCommandInfo;
+import com.google.common.base.Supplier;
 import com.google.common.io.BaseEncoding;
 import com.google.common.net.HttpHeaders;
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
-import org.bukkit.event.Listener;
-import org.bukkit.event.server.ServerListPingEvent;
+import org.bukkit.plugin.Plugin;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.CookieManager;
 import java.net.HttpURLConnection;
@@ -52,14 +48,32 @@ import java.util.logging.Level;
         )
     }
 )//@formatter:on
-public class VerifyCommand implements Command, Listener {
+public class VerifyCommand implements Command {
 
     private static final BaseEncoding CREDENTIALS_ENCODING = BaseEncoding.base64().omitPadding();
 
     private final AudioConnect plugin = AudioConnect.getInstance();
+    private final VerifyRequestListener verifyRequestListener;
 
-    private boolean registeredListener;
     private VerifyTask activeVerifyTask;
+
+    public VerifyCommand() {
+        Supplier<String> verifyCodeSupplier = new Supplier<String>() {
+            @Override
+            public String get() {
+                return activeVerifyTask != null ? activeVerifyTask.encodedVerifyCode : null;
+            }
+        };
+
+        Plugin protocolLibPlugin = Bukkit.getPluginManager().getPlugin("ProtocolLib");
+        if (protocolLibPlugin != null && protocolLibPlugin.isEnabled()) {
+            // Modify the status packet directly if ProtocolLib is enabled because
+            // plugins like ServerListPlus do and overwrite the Bukkit ServerListPing event
+            verifyRequestListener = new VerifyRequestPacketListener(verifyCodeSupplier);
+        } else {
+            verifyRequestListener = new VerifyRequestEventListener(verifyCodeSupplier);
+        }
+    }
 
 
     @Override
@@ -81,25 +95,13 @@ public class VerifyCommand implements Command, Listener {
             return false;
         }
 
-        if (!registeredListener) {
-            Bukkit.getPluginManager().registerEvents(this, plugin);
-            registeredListener = true;
-        }
-
         plugin.getMessenger().sendMessage(sender, "misc.verify-request", config.getConnectionHost());
+
+        verifyRequestListener.register();
 
         activeVerifyTask = new VerifyTask(sender, config, address);
         Bukkit.getScheduler().runTaskAsynchronously(plugin, activeVerifyTask);
         return true;
-    }
-
-
-    @EventHandler(priority = EventPriority.HIGHEST)
-    private void onServerPing(ServerListPingEvent event) {
-        String encodedVerifyCode;
-        if (activeVerifyTask != null && (encodedVerifyCode = activeVerifyTask.encodedVerifyCode) != null) {
-            event.setMotd(encodedVerifyCode + ChatColor.RESET + event.getMotd());
-        }
     }
 
 
@@ -114,6 +116,14 @@ public class VerifyCommand implements Command, Listener {
         }
     }
 
+
+    interface VerifyRequestListener {
+
+        void register();
+
+        void unregister();
+
+    }
 
     private class VerifyTask implements Runnable {
 
@@ -234,7 +244,7 @@ public class VerifyCommand implements Command, Listener {
                 } else {
                     finish("failed.verify-response", responseCode);
                 }
-            } catch (IOException e) {
+            } catch (Exception e) {
                 finish("failed.verify-error");
                 String errorMsg = "Failed to verify server at " + verifyUrl;
                 plugin.getLogger().log(Level.SEVERE, errorMsg, e);
@@ -250,7 +260,7 @@ public class VerifyCommand implements Command, Listener {
                 @Override
                 public void run() {
                     activeVerifyTask = null;
-
+                    verifyRequestListener.unregister();
                     sendMessage(msgPath, msgVars);
                 }
             });
