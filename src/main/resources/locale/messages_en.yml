@@ -37,6 +37,10 @@ failed:
   import-mcjukebox-nothing: '&cThe current MCJukebox installation has no configured region audio to import'
   import-mcjukebox-error: '&cAn unexpected error occurred reading MCJukebox files'
   import-response-401: '&4The import request was rejected: &cThe configured account credentials are invalid. Please check that your user-id and password in config.yml are correct.'
+  edit-invalid-region: '&cA region with the ID <region-id> does not exist in this world'
+  edit-audio-exists: '&cThe <region-id> WorldGuard region already has the given audio setting'
+  edit-audio-absent: '&cThe <region-id> WorldGuard region does not have the given audio setting'
+  worldguard-save: '&cFailed to save WorldGuard region changes. Please check console for details.'
 
 succeeded:
   reloaded: 'AudioConnect config and language files have been reloaded'
@@ -45,6 +49,8 @@ succeeded:
   volume-set: 'Audio has been <state>'
   address-verified: "&7This server's public address &6<address> &7has been &averified &7with your account at <host>"
   import-stopping: 'Stopping the current import process...'
+  audio-added: '&7The Audio settings "&6<audio>&7" have been &aadded &7to region &6<region-id>'
+  audio-removed: '&7The Audio settings "&6<audio>&7" have been &cremoved &7from region &6<region-id>'
 
 misc:
   announcement: 'Experience this server on a whole new level with integrated server audio! '

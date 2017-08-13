@@ -37,6 +37,12 @@ failed:
   import-mcjukebox-nothing: '&cDas derzeitig installierte MCJukebox hat keine konfigurierte Region-Audio zum importieren.'
   import-mcjukebox-error: '&cEin unerwarteter Fehler ist beim lesen der MCJukebox Dateien aufgetreten'
   import-response-401: '&4Die Importanforderung wurde abgelehnt: &cDie konfigurierten Account Daten sind ungültig. Bitte überprüfe dass deine USER-ID und Passwort in der config.yml korrekt sind.'
+  # --- UNTRANSLATED BEGIN ---
+  edit-invalid-region: '&cA region with the ID <region-id> does not exist in this world'
+  edit-audio-exists: '&cThe <region-id> WorldGuard region already has the given audio setting'
+  edit-audio-absent: '&cThe <region-id> WorldGuard region does not have the given audio setting'
+  worldguard-save: '&cFailed to save WorldGuard region changes. Please check console for details.'
+  # --- UNTRANSLATED END ---
 
 succeeded:
   reloaded: 'AudioConnect Config und Sprachdateien wurden reloaded.'
@@ -45,6 +51,10 @@ succeeded:
   volume-set: 'Audio wurde <state>'
   address-verified: "&7Die Öffentliche Adresse &6<address> &7dieses Servers wurde mit deinem Account bei <host> &averifiziert."
   import-stopping: 'Stoppen des aktuellen Importvorgangs ...'
+  # --- UNTRANSLATED BEGIN ---
+  audio-added: '&7The Audio settings "&6<audio>&7" have been &aadded &7to region &6<region-id>'
+  audio-removed: '&7The Audio settings "&6<audio>&7" have been &cremoved &7from region &6<region-id>'
+  # --- UNTRANSLATED END ---
 
 misc:
   announcement: 'Erlebe diesen Server auf einem ganz neuen Level mit integrierter Server-Audio! '

@@ -2,13 +2,18 @@ package com.deadmandungeons.audioconnect.command;
 
 import com.deadmandungeons.audioconnect.AudioConnect;
 import com.deadmandungeons.audioconnect.command.verify.VerifyCommand;
+import com.deadmandungeons.audioconnect.flags.AudioTrack;
+import com.deadmandungeons.audioconnect.flags.AudioTrackFlag;
 import com.deadmandungeons.audioconnect.messages.AudioCommandMessage;
 import com.deadmandungeons.audioconnect.messages.AudioCommandMessage.AudioCommand;
 import com.deadmandungeons.deadmanplugin.Messenger;
+import com.deadmandungeons.deadmanplugin.Result;
+import com.deadmandungeons.deadmanplugin.command.ArgumentConverter;
 import com.deadmandungeons.deadmanplugin.command.Arguments;
 import com.deadmandungeons.deadmanplugin.command.Command;
 import com.deadmandungeons.deadmanplugin.command.CommandInfo;
 import com.deadmandungeons.deadmanplugin.command.DeadmanExecutor;
+import com.sk89q.worldguard.protection.flags.InvalidFlagFormat;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -29,6 +34,7 @@ public class CommandHandler extends DeadmanExecutor {
         registerCommand(ConnectCommand.class);
         registerCommand(ListCommand.class);
         registerCommand(SendCommand.class);
+        registerCommand(RegionCommand.class);
         registerCommand(ReloadCommand.class);
         registerCommand(RegisterCommand.class);
         registerCommand(VerifyCommand.class);
@@ -46,6 +52,20 @@ public class CommandHandler extends DeadmanExecutor {
 
         unmuteCommand = plugin.getCommand("unmute");
         unmuteCommand.setExecutor(aliasExecutor);
+
+        registerConverter(AudioTrack.class, new ArgumentConverter<AudioTrack>() {
+
+            private final AudioTrackFlag audioTrackFlag = new AudioTrackFlag();
+
+            @Override
+            public Result<AudioTrack> convertCommandArg(String argName, String arg) {
+                try {
+                    return Result.success(audioTrackFlag.parseInput(arg));
+                } catch (InvalidFlagFormat e) {
+                    return Result.fail(e.getMessage());
+                }
+            }
+        });
     }
 
 

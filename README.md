@@ -27,6 +27,7 @@ A release copy of AudioConnect can be obtained from the [Spigot Resource page](h
 * Players can mute/unmute the audio using in-game commands
 * Use commands or the API to play audio sources to all or specific players
 * Use commands to monitor which players are connected and listening
+* Import the audio files and regions from an existing MCJukebox plugin installation with a single command
 
 
 ## Links
