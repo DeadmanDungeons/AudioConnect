@@ -151,7 +151,7 @@ public class RegionCommand implements Command {
 
         audioInfo.append(color2).append("Audio: ").append("\n");
         if (regionAudio == null || regionAudio.isEmpty()) {
-            audioInfo.append(ChatColor.RED).append("  * NONE *");
+            audioInfo.append(ChatColor.RED).append("  * NONE *").append("\n");
         } else {
             for (AudioTrack audio : regionAudio) {
                 audioInfo.append(color3).append("- ").append(color1).append(audio.getAudioId());
@@ -176,7 +176,7 @@ public class RegionCommand implements Command {
 
         audioInfo.append(color2).append("Audio Delay: ").append("\n");
         if (regionAudioDelay == null || regionAudioDelay.isEmpty()) {
-            audioInfo.append(ChatColor.RED).append("  * NONE *");
+            audioInfo.append(ChatColor.RED).append("  * NONE *").append("\n");
         } else {
             for (AudioDelay audioDelay : regionAudioDelay) {
                 audioInfo.append(color3).append("- ").append(color1).append(audioDelay.getDelayTime());
