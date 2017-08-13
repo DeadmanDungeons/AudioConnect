@@ -40,13 +40,13 @@ public class AudioTrackFlag extends Flag<AudioTrack> implements FlagHandler<Audi
         String trackId = null;
         DayTime dayTime = null;
         String[] properties = input.split(":");
-        if (properties.length == 1 && !properties[0].startsWith("id=")) {
+        if (!properties[0].startsWith("id=")) {
             properties[0] = "id=" + properties[0];
         }
         for (String property : properties) {
             String[] keyValuePair = property.split("=");
             if (keyValuePair.length != 2) {
-                throw new InvalidFlagFormat("AudioTrack properties must be in the format <key>=<value>");
+                throw new InvalidFlagFormat("AudioTrack settings must be in the format ':<key>=<value>' following the audio ID");
             }
             String key = keyValuePair[0], value = keyValuePair[1];
             if (audioId == null && key.equals("id")) {
