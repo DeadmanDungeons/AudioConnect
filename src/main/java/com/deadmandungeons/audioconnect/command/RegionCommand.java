@@ -1,6 +1,7 @@
 package com.deadmandungeons.audioconnect.command;
 
 import com.deadmandungeons.audioconnect.AudioConnect;
+import com.deadmandungeons.audioconnect.flags.AudioDelay;
 import com.deadmandungeons.audioconnect.flags.AudioTrack;
 import com.deadmandungeons.deadmanplugin.command.ArgumentInfo;
 import com.deadmandungeons.deadmanplugin.command.ArgumentInfo.ArgType;
@@ -12,6 +13,7 @@ import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.managers.storage.StorageException;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
+import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -21,10 +23,10 @@ import java.util.logging.Level;
 
 //@formatter:off
 @CommandInfo(
-    name = "edit",
-    description = "Edit the audio settings of a WorldGuard region. " +
+    name = "region",
+    description = "Manage the audio settings of a WorldGuard region. " +
             "This is a convenient alternative to using the WorldGuard flags directly",
-    permissions = "audioconnect.admin.edit",
+    permissions = "audioconnect.admin.region",
     inGameOnly = true,
     subCommands = {
         @SubCommandInfo(
@@ -42,10 +44,17 @@ import java.util.logging.Level;
                 @ArgumentInfo(argName = "audio", argType = ArgType.VARIABLE, varType = AudioTrack.class)
             },
             description = "Remove an audio setting from the given region in the current World"
+        ),
+        @SubCommandInfo(
+            arguments = {
+                @ArgumentInfo(argName = "info", argType = ArgType.NON_VARIABLE),
+                @ArgumentInfo(argName = "region-id", argType = ArgType.VARIABLE)
+            },
+            description = "Display all audio settings of the given region in the current World"
         )
     }
 )//@formatter:on
-public class EditCommand implements Command {
+public class RegionCommand implements Command {
 
     private final AudioConnect plugin = AudioConnect.getInstance();
 
@@ -56,7 +65,6 @@ public class EditCommand implements Command {
         Player player = (Player) sender;
 
         String regionId = (String) args.getArgs()[1];
-        AudioTrack audioTrack = (AudioTrack) args.getArgs()[2];
 
         RegionManager regionManager = WorldGuardPlugin.inst().getRegionManager(player.getWorld());
         if (regionManager == null) {
@@ -67,9 +75,11 @@ public class EditCommand implements Command {
 
         switch (args.getSubCmdIndex()) {
             case 0:
-                return addAudio(sender, audioTrack, regionManager, regionId);
+                return addAudio(sender, (AudioTrack) args.getArgs()[2], regionManager, regionId);
             case 1:
-                return removeAudio(sender, audioTrack, regionManager, regionId);
+                return removeAudio(sender, (AudioTrack) args.getArgs()[2], regionManager, regionId);
+            case 2:
+                return printAudioInfo(sender, regionManager, regionId);
         }
         return false;
     }
@@ -113,6 +123,77 @@ public class EditCommand implements Command {
         }
 
         plugin.getMessenger().sendMessage(sender, "succeeded.audio-removed", audio, regionId);
+        return true;
+    }
+
+    public boolean printAudioInfo(CommandSender sender, RegionManager regionManager, String regionId) {
+        ProtectedRegion region = regionManager.getRegion(regionId);
+        if (region == null) {
+            plugin.getMessenger().sendErrorMessage(sender, "failed.edit-invalid-region", regionId);
+            return false;
+        }
+        Set<AudioTrack> regionAudio = region.getFlag(plugin.getAudioFlag());
+        Set<AudioDelay> regionAudioDelay = region.getFlag(plugin.getAudioDelayFlag());
+
+        StringBuilder audioInfo = new StringBuilder();
+
+        ChatColor color1 = plugin.getMessenger().getPrimaryColor();
+        ChatColor color2 = plugin.getMessenger().getSecondaryColor();
+        ChatColor color3 = plugin.getMessenger().getTertiaryColor();
+
+        audioInfo.append(color2);
+        audioInfo.append("\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550");
+        audioInfo.append(" Region Audio Info ");
+        audioInfo.append("\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550");
+        audioInfo.append("\n");
+
+        audioInfo.append(color2).append("Region: ").append(color1).append(regionId).append("\n");
+
+        audioInfo.append(color2).append("Audio: ").append("\n");
+        if (regionAudio == null || regionAudio.isEmpty()) {
+            audioInfo.append(ChatColor.RED).append("  * NONE *");
+        } else {
+            for (AudioTrack audio : regionAudio) {
+                audioInfo.append(color3).append("- ").append(color1).append(audio.getAudioId());
+
+                audioInfo.append(color2).append(" (").append("track: ");
+                if (audio.getTrackId() != null) {
+                    audioInfo.append(color1).append(audio.getTrackId());
+                } else {
+                    audioInfo.append("default");
+                }
+
+                audioInfo.append(color2).append(", time: ");
+                if (audio.getDayTime() != null) {
+                    audioInfo.append(color1).append(audio.getDayTime().name().toLowerCase());
+                } else {
+                    audioInfo.append("any");
+                }
+
+                audioInfo.append(color2).append(")").append("\n");
+            }
+        }
+
+        audioInfo.append(color2).append("Audio Delay: ").append("\n");
+        if (regionAudioDelay == null || regionAudioDelay.isEmpty()) {
+            audioInfo.append(ChatColor.RED).append("  * NONE *");
+        } else {
+            for (AudioDelay audioDelay : regionAudioDelay) {
+                audioInfo.append(color3).append("- ").append(color1).append(audioDelay.getDelayTime());
+
+                audioInfo.append(color2).append(" (").append("track: ");
+                audioInfo.append(color2).append(" (").append("track: ");
+                if (audioDelay.getTrackId() != null) {
+                    audioInfo.append(color1).append(audioDelay.getTrackId());
+                } else {
+                    audioInfo.append("default");
+                }
+
+                audioInfo.append(color2).append(")").append("\n");
+            }
+        }
+
+        sender.sendMessage(audioInfo.toString());
         return true;
     }
 

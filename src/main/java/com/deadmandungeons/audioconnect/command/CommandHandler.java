@@ -34,7 +34,7 @@ public class CommandHandler extends DeadmanExecutor {
         registerCommand(ConnectCommand.class);
         registerCommand(ListCommand.class);
         registerCommand(SendCommand.class);
-        registerCommand(EditCommand.class);
+        registerCommand(RegionCommand.class);
         registerCommand(ReloadCommand.class);
         registerCommand(RegisterCommand.class);
         registerCommand(VerifyCommand.class);

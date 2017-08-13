@@ -45,7 +45,7 @@ permissions:
             audioconnect.admin.reload: true
             audioconnect.admin.list: true
             audioconnect.admin.send: true
-            audioconnect.admin.edit: true
+            audioconnect.admin.region: true
     audioconnect.admin.import:
         description: Gives access to import the regions and audio files from your MCJukebox installation
     audioconnect.admin.verify:
@@ -56,8 +56,8 @@ permissions:
         description: Gives access to list the connected players, available audio, and enabled regions
     audioconnect.admin.send:
         description: Gives access to send and play audio to a connected player
-    audioconnect.admin.edit:
-        description: Gives access to edit the audio settings of a WorldGuard region
+    audioconnect.admin.region:
+        description: Gives access to manage the audio settings of a WorldGuard region
     audioconnect.user.*:
         default: true
         description: Gives access to all AudioConnect user permissions
