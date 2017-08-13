@@ -356,6 +356,7 @@ public final class AudioConnect extends DeadmanPlugin {
         private int writeAudioMessages(Player player, TrackingData trackingData, List<Message> messageBuffer, boolean ignoreEquals) {
             Map<String, Set<String>> audioIdsByTrack = null;
             Map<String, Range> audioDelayByTrack = null;
+            String defaultTrackId = config.getDefaultTrackId();
 
             Location loc = player.getLocation();
             RegionManager regionManager = worldGuard.getRegionManager(loc.getWorld());
@@ -386,10 +387,12 @@ public final class AudioConnect extends DeadmanPlugin {
                     for (AudioTrack audioTrack : audioTracks) {
                         if ((audioTrack.getDayTime() == null || audioTrack.getDayTime().check(loc.getWorld())) &&
                                 audioList.contains(audioTrack.getAudioId())) {
-                            Set<String> audioIds = audioIdsByTrack.get(audioTrack.getTrackId());
+                            // Specify default track ID rather than sending null
+                            String trackId = (audioTrack.getTrackId() != null ? audioTrack.getTrackId() : defaultTrackId);
+                            Set<String> audioIds = audioIdsByTrack.get(trackId);
                             if (audioIds == null) {
                                 audioIds = new HashSet<>();
-                                audioIdsByTrack.put(audioTrack.getTrackId(), audioIds);
+                                audioIdsByTrack.put(trackId, audioIds);
                             }
 
                             audioIds.add(audioTrack.getAudioId());
@@ -410,7 +413,9 @@ public final class AudioConnect extends DeadmanPlugin {
                         audioDelayByTrack = new HashMap<>();
                     }
                     for (AudioDelay audioDelay : audioDelays) {
-                        audioDelayByTrack.put(audioDelay.getTrackId(), audioDelay.getDelayTime());
+                        // Specify default track ID rather than sending null
+                        String trackId = (audioDelay.getTrackId() != null ? audioDelay.getTrackId() : defaultTrackId);
+                        audioDelayByTrack.put(trackId, audioDelay.getDelayTime());
                     }
                 }
             }

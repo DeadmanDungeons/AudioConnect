@@ -38,6 +38,14 @@ failed:
   import-mcjukebox-nothing: '&cLa instalación de MCJukebox actual no tiene regiones de audio configuradas para importarlas'
   import-mcjukebox-error: '&cHa ocurrido un error inesperado al leer los archivos de MCJukebox'
   import-response-401: '&4La petición de importación fue rechazada: &cLos credenciales de la cuenta son inválidas. Comprueba que el usuario y contraseña en el config.yml sean correctos.'
+  # --- UNTRANSLATED BEGIN ---
+  edit-invalid-region: '&cA region with the ID <region-id> does not exist in this world'
+  edit-audio-exists: '&cThe <region-id> WorldGuard region already has the given audio setting'
+  edit-audio-absent: '&cThe <region-id> WorldGuard region does not have the given audio setting'
+  edit-delay-exists: '&cThe <region-id> WorldGuard region already has the given audio-delay setting'
+  edit-delay-absent: '&cThe <region-id> WorldGuard region does not have the given audio-delay setting'
+  worldguard-save: '&cFailed to save WorldGuard region changes. Please check console for details.'
+  # --- UNTRANSLATED END ---
 
 succeeded:
   reloaded: 'La configuración y los lenguajes de AudioConnect han sido recargados'
@@ -45,6 +53,13 @@ succeeded:
   audio-sent-player: 'El Audio <audio-id> ha sido enviado a <player-name>'
   volume-set: 'El Audio ha sido <state>'
   address-verified: "&7La dirección pública de este servidor (&6<address>&7) ha sido &averificada &7con tu cuenta en <host>"
+  # --- UNTRANSLATED BEGIN ---
+  import-stopping: 'Stopping the current import process...'
+  audio-added: '&7The audio setting "&6<audio-setting>&7" has been &aadded &7to region &6<region-id>'
+  audio-removed: '&7The audio setting "&6<audio-setting>&7" has been &cremoved &7from region &6<region-id>'
+  delay-added: '&7The audio-delay setting "&6<delay-setting>&7" has been &aadded &7to region &6<region-id>'
+  delay-removed: '&7The audio-delay setting "&6<delay-setting>&7" has been &cremoved &7from region &6<region-id>'
+  # --- UNTRANSLATED END ---
 
 misc:
   announcement: '¡Propulsa tu experiencia en este servidor a un nivel completamente nuevo con audio integrado en el servidor! '

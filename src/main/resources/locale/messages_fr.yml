@@ -38,6 +38,12 @@ failed:
   import-mcjukebox-nothing: '&cThe current MCJukebox installation has no configured region audio to import'
   import-mcjukebox-error: '&cAn unexpected error occurred reading MCJukebox files'
   import-response-401: '&4The import request was rejected: &cThe configured account credentials are invalid. Please check that your user-id and password in config.yml are correct.'
+  edit-invalid-region: '&cA region with the ID <region-id> does not exist in this world'
+  edit-audio-exists: '&cThe <region-id> WorldGuard region already has the given audio setting'
+  edit-audio-absent: '&cThe <region-id> WorldGuard region does not have the given audio setting'
+  edit-delay-exists: '&cThe <region-id> WorldGuard region already has the given audio-delay setting'
+  edit-delay-absent: '&cThe <region-id> WorldGuard region does not have the given audio-delay setting'
+  worldguard-save: '&cFailed to save WorldGuard region changes. Please check console for details.'
   # --- UNTRANSLATED END ---
 
 succeeded:
@@ -48,6 +54,10 @@ succeeded:
   address-verified: "&7L'adresse publique du serveur &6<address> &7a été &avérifiée pour ton compte <host> !"
   # --- UNTRANSLATED BEGIN ---
   import-stopping: 'Stopping the current import process...'
+  audio-added: '&7The audio setting "&6<audio-setting>&7" has been &aadded &7to region &6<region-id>'
+  audio-removed: '&7The audio setting "&6<audio-setting>&7" has been &cremoved &7from region &6<region-id>'
+  delay-added: '&7The audio-delay setting "&6<delay-setting>&7" has been &aadded &7to region &6<region-id>'
+  delay-removed: '&7The audio-delay setting "&6<delay-setting>&7" has been &cremoved &7from region &6<region-id>'
   # --- UNTRANSLATED END ---
 
 misc:

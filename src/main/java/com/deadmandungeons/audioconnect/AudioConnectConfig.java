@@ -52,6 +52,7 @@ public final class AudioConnectConfig extends DeadmanConfig {
     private volatile UUID serverId;
     private volatile URI websocketUri;
     private volatile URL webappUrl;
+    private volatile String defaultTrackId;
 
     @Override
     public synchronized void loadEntries(DeadmanPlugin plugin) throws IllegalStateException {
@@ -61,6 +62,7 @@ public final class AudioConnectConfig extends DeadmanConfig {
         serverId = null;
         websocketUri = null;
         webappUrl = null;
+        defaultTrackId = null;
     }
 
 
@@ -186,6 +188,13 @@ public final class AudioConnectConfig extends DeadmanConfig {
         return audioTracks.value();
     }
 
+    public synchronized String getDefaultTrackId() {
+        if (defaultTrackId == null) {
+            defaultTrackId = findDefaultTrackId(audioTracks);
+        }
+        return defaultTrackId;
+    }
+
 
     private static PluginFile createLocaleFile(ConfigEntry<String> locale) {
         try {
@@ -238,6 +247,19 @@ public final class AudioConnectConfig extends DeadmanConfig {
 
     private static URI createUri(String protocol, String host, int port, String path) throws URISyntaxException {
         return new URI(protocol, null, host, port, path, null, null);
+    }
+
+    private static String findDefaultTrackId(MapConfigEntry<String, AudioTrackSettings> audioTracks) {
+        String defaultTrackId = null;
+        for (Map.Entry<String, AudioTrackSettings> trackEntry : audioTracks.value().entrySet()) {
+            if (defaultTrackId == null) {
+                defaultTrackId = trackEntry.getKey();
+            }
+            if (trackEntry.getValue().isDefaultTrack()) {
+                defaultTrackId = trackEntry.getKey();
+            }
+        }
+        return defaultTrackId;
     }
 
 
