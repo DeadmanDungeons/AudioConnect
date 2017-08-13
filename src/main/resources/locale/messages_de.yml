@@ -41,6 +41,8 @@ failed:
   edit-invalid-region: '&cA region with the ID <region-id> does not exist in this world'
   edit-audio-exists: '&cThe <region-id> WorldGuard region already has the given audio setting'
   edit-audio-absent: '&cThe <region-id> WorldGuard region does not have the given audio setting'
+  edit-delay-exists: '&cThe <region-id> WorldGuard region already has the given audio-delay setting'
+  edit-delay-absent: '&cThe <region-id> WorldGuard region does not have the given audio-delay setting'
   worldguard-save: '&cFailed to save WorldGuard region changes. Please check console for details.'
   # --- UNTRANSLATED END ---
 
@@ -52,8 +54,10 @@ succeeded:
   address-verified: "&7Die Öffentliche Adresse &6<address> &7dieses Servers wurde mit deinem Account bei <host> &averifiziert."
   import-stopping: 'Stoppen des aktuellen Importvorgangs ...'
   # --- UNTRANSLATED BEGIN ---
-  audio-added: '&7The Audio settings "&6<audio>&7" have been &aadded &7to region &6<region-id>'
-  audio-removed: '&7The Audio settings "&6<audio>&7" have been &cremoved &7from region &6<region-id>'
+  audio-added: '&7The audio setting "&6<audio-setting>&7" has been &aadded &7to region &6<region-id>'
+  audio-removed: '&7The audio setting "&6<audio-setting>&7" has been &cremoved &7from region &6<region-id>'
+  delay-added: '&7The audio-delay setting "&6<delay-setting>&7" has been &aadded &7to region &6<region-id>'
+  delay-removed: '&7The audio-delay setting "&6<delay-setting>&7" has been &cremoved &7from region &6<region-id>'
   # --- UNTRANSLATED END ---
 
 misc:

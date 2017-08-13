@@ -2,8 +2,11 @@ package com.deadmandungeons.audioconnect.command;
 
 import com.deadmandungeons.audioconnect.AudioConnect;
 import com.deadmandungeons.audioconnect.command.verify.VerifyCommand;
+import com.deadmandungeons.audioconnect.flags.AudioDelay;
+import com.deadmandungeons.audioconnect.flags.AudioDelayFlag;
 import com.deadmandungeons.audioconnect.flags.AudioTrack;
 import com.deadmandungeons.audioconnect.flags.AudioTrackFlag;
+import com.deadmandungeons.audioconnect.flags.compat.FlagHandler;
 import com.deadmandungeons.audioconnect.messages.AudioCommandMessage;
 import com.deadmandungeons.audioconnect.messages.AudioCommandMessage.AudioCommand;
 import com.deadmandungeons.deadmanplugin.Messenger;
@@ -31,6 +34,9 @@ public class CommandHandler extends DeadmanExecutor {
         super(plugin, messenger, commandCooldown);
         this.plugin = plugin;
 
+        registerConverter(AudioTrack.class, new FlagArgumentConverter<>(new AudioTrackFlag()));
+        registerConverter(AudioDelay.class, new FlagArgumentConverter<>(new AudioDelayFlag()));
+
         registerCommand(ConnectCommand.class);
         registerCommand(ListCommand.class);
         registerCommand(SendCommand.class);
@@ -52,20 +58,6 @@ public class CommandHandler extends DeadmanExecutor {
 
         unmuteCommand = plugin.getCommand("unmute");
         unmuteCommand.setExecutor(aliasExecutor);
-
-        registerConverter(AudioTrack.class, new ArgumentConverter<AudioTrack>() {
-
-            private final AudioTrackFlag audioTrackFlag = new AudioTrackFlag();
-
-            @Override
-            public Result<AudioTrack> convertCommandArg(String argName, String arg) {
-                try {
-                    return Result.success(audioTrackFlag.parseInput(arg));
-                } catch (InvalidFlagFormat e) {
-                    return Result.fail(e.getMessage());
-                }
-            }
-        });
     }
 
 
@@ -139,6 +131,24 @@ public class CommandHandler extends DeadmanExecutor {
             return false;
         }
 
+    }
+
+    private class FlagArgumentConverter<T> implements ArgumentConverter<T> {
+
+        private final FlagHandler<T> flag;
+
+        private FlagArgumentConverter(FlagHandler<T> flag) {
+            this.flag = flag;
+        }
+
+        @Override
+        public Result<T> convertCommandArg(String argName, String arg) {
+            try {
+                return Result.success(flag.parseInput(arg));
+            } catch (InvalidFlagFormat e) {
+                return Result.fail(e.getMessage());
+            }
+        }
     }
 
 }

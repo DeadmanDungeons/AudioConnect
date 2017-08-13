@@ -38,13 +38,13 @@ public class AudioDelayFlag extends Flag<AudioDelay> implements FlagHandler<Audi
         Range delayTime = null;
         String trackId = null;
         String[] properties = input.split(":");
-        if (properties.length == 1 && !properties[0].startsWith("time=")) {
+        if (!properties[0].startsWith("time=")) {
             properties[0] = "time=" + properties[0];
         }
         for (String property : properties) {
             String[] keyValuePair = property.split("=");
             if (keyValuePair.length != 2) {
-                throw new InvalidFlagFormat("AudioDelay properties must be in the format <key>=<value>");
+                throw new InvalidFlagFormat("AudioDelay must be in the format ':<key>=<value>' following the delay range or constant");
             }
             String key = keyValuePair[0], value = keyValuePair[1];
             if (delayTime == null && key.equals("time")) {
