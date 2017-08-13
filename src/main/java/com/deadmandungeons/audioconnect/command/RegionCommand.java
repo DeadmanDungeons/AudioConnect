@@ -10,6 +10,7 @@ import com.deadmandungeons.deadmanplugin.command.Command;
 import com.deadmandungeons.deadmanplugin.command.CommandInfo;
 import com.deadmandungeons.deadmanplugin.command.SubCommandInfo;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
+import com.sk89q.worldguard.protection.flags.SetFlag;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.managers.storage.StorageException;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
@@ -23,34 +24,54 @@ import java.util.logging.Level;
 
 //@formatter:off
 @CommandInfo(
-    name = "region",
+    name = "Region",
     description = "Manage the audio settings of a WorldGuard region. " +
-            "This is a convenient alternative to using the WorldGuard flags directly",
+            "This is a convenient alternative to using WorldGuard flags directly",
     permissions = "audioconnect.admin.region",
     inGameOnly = true,
     subCommands = {
         @SubCommandInfo(
             arguments = {
-                @ArgumentInfo(argName = "add", argType = ArgType.NON_VARIABLE),
-                @ArgumentInfo(argName = "region-id", argType = ArgType.VARIABLE),
-                @ArgumentInfo(argName = "audio", argType = ArgType.VARIABLE, varType = AudioTrack.class)
+                @ArgumentInfo(argName = "info", argType = ArgType.NON_VARIABLE),
+                @ArgumentInfo(argName = "region-id", argType = ArgType.VARIABLE)
             },
-            description = "Add an audio setting to the given region in the current World"
+            description = "Display all audio settings of the given region"
+        ),
+        @SubCommandInfo(
+            arguments = {
+                @ArgumentInfo(argName = "add", argType = ArgType.NON_VARIABLE),
+                @ArgumentInfo(argName = "audio", argType = ArgType.NON_VARIABLE),
+                @ArgumentInfo(argName = "region-id", argType = ArgType.VARIABLE),
+                @ArgumentInfo(argName = "audio-setting", argType = ArgType.VARIABLE, varType = AudioTrack.class)
+            },
+            description = "Add an audio setting to the given region"
         ),
         @SubCommandInfo(
             arguments = {
                 @ArgumentInfo(argName = "remove", argType = ArgType.NON_VARIABLE),
+                @ArgumentInfo(argName = "audio", argType = ArgType.NON_VARIABLE),
                 @ArgumentInfo(argName = "region-id", argType = ArgType.VARIABLE),
-                @ArgumentInfo(argName = "audio", argType = ArgType.VARIABLE, varType = AudioTrack.class)
+                @ArgumentInfo(argName = "audio-setting", argType = ArgType.VARIABLE, varType = AudioTrack.class)
             },
-            description = "Remove an audio setting from the given region in the current World"
+            description = "Remove an audio setting from the given region"
         ),
         @SubCommandInfo(
             arguments = {
-                @ArgumentInfo(argName = "info", argType = ArgType.NON_VARIABLE),
-                @ArgumentInfo(argName = "region-id", argType = ArgType.VARIABLE)
+                @ArgumentInfo(argName = "add", argType = ArgType.NON_VARIABLE),
+                @ArgumentInfo(argName = "delay", argType = ArgType.NON_VARIABLE),
+                @ArgumentInfo(argName = "region-id", argType = ArgType.VARIABLE),
+                @ArgumentInfo(argName = "delay-setting", argType = ArgType.VARIABLE, varType = AudioDelay.class)
             },
-            description = "Display all audio settings of the given region in the current World"
+            description = "Add an audio delay setting to the given region"
+        ),
+        @SubCommandInfo(
+            arguments = {
+                @ArgumentInfo(argName = "remove", argType = ArgType.NON_VARIABLE),
+                @ArgumentInfo(argName = "delay", argType = ArgType.NON_VARIABLE),
+                @ArgumentInfo(argName = "region-id", argType = ArgType.VARIABLE),
+                @ArgumentInfo(argName = "delay-setting", argType = ArgType.VARIABLE, varType = AudioDelay.class)
+            },
+            description = "Remove an audio delay setting from the given region"
         )
     }
 )//@formatter:on
@@ -64,67 +85,32 @@ public class RegionCommand implements Command {
 
         Player player = (Player) sender;
 
-        String regionId = (String) args.getArgs()[1];
+        int command = args.getSubCmdIndex();
 
+        String regionId = (String) args.getArgs()[command == 0 ? 1 : 2];
         RegionManager regionManager = WorldGuardPlugin.inst().getRegionManager(player.getWorld());
         if (regionManager == null) {
             plugin.getMessenger().sendErrorMessage(sender, "failed.edit-invalid-region", regionId);
             return false;
         }
 
-
-        switch (args.getSubCmdIndex()) {
-            case 0:
-                return addAudio(sender, (AudioTrack) args.getArgs()[2], regionManager, regionId);
-            case 1:
-                return removeAudio(sender, (AudioTrack) args.getArgs()[2], regionManager, regionId);
-            case 2:
-                return printAudioInfo(sender, regionManager, regionId);
+        if (command == 0) {
+            return printAudioInfo(sender, regionManager, regionId);
+        } else {
+            switch (command) {
+                case 1:
+                    return addAudio(sender, (AudioTrack) args.getArgs()[3], regionManager, regionId);
+                case 2:
+                    return removeAudio(sender, (AudioTrack) args.getArgs()[3], regionManager, regionId);
+                case 3:
+                    return addDelay(sender, (AudioDelay) args.getArgs()[3], regionManager, regionId);
+                case 4:
+                    return removeDelay(sender, (AudioDelay) args.getArgs()[3], regionManager, regionId);
+            }
         }
         return false;
     }
 
-    public boolean addAudio(CommandSender sender, AudioTrack audio, RegionManager regionManager, String regionId) {
-        ProtectedRegion region = regionManager.getRegion(regionId);
-        if (region == null) {
-            plugin.getMessenger().sendErrorMessage(sender, "failed.edit-invalid-region", regionId);
-            return false;
-        }
-        Set<AudioTrack> regionAudio = getRegionAudio(region);
-        if (!regionAudio.add(audio)) {
-            plugin.getMessenger().sendErrorMessage(sender, "failed.edit-audio-exists", regionId);
-            return false;
-        }
-
-        if (!saveAudioFlag(regionManager, region, regionAudio)) {
-            plugin.getMessenger().sendErrorMessage(sender, "failed.worldguard-save");
-            return false;
-        }
-
-        plugin.getMessenger().sendMessage(sender, "succeeded.audio-added", audio, regionId);
-        return true;
-    }
-
-    public boolean removeAudio(CommandSender sender, AudioTrack audio, RegionManager regionManager, String regionId) {
-        ProtectedRegion region = regionManager.getRegion(regionId);
-        if (region == null) {
-            plugin.getMessenger().sendErrorMessage(sender, "failed.edit-invalid-region", regionId);
-            return false;
-        }
-        Set<AudioTrack> regionAudio = getRegionAudio(region);
-        if (!regionAudio.remove(audio)) {
-            plugin.getMessenger().sendErrorMessage(sender, "failed.edit-audio-absent", regionId);
-            return false;
-        }
-
-        if (!saveAudioFlag(regionManager, region, regionAudio)) {
-            plugin.getMessenger().sendErrorMessage(sender, "failed.worldguard-save");
-            return false;
-        }
-
-        plugin.getMessenger().sendMessage(sender, "succeeded.audio-removed", audio, regionId);
-        return true;
-    }
 
     public boolean printAudioInfo(CommandSender sender, RegionManager regionManager, String regionId) {
         ProtectedRegion region = regionManager.getRegion(regionId);
@@ -197,9 +183,94 @@ public class RegionCommand implements Command {
         return true;
     }
 
-    private boolean saveAudioFlag(RegionManager regionManager, ProtectedRegion region, Set<AudioTrack> regionAudio) {
+    public boolean addAudio(CommandSender sender, AudioTrack audio, RegionManager regionManager, String regionId) {
+        ProtectedRegion region = regionManager.getRegion(regionId);
+        if (region == null) {
+            plugin.getMessenger().sendErrorMessage(sender, "failed.edit-invalid-region", regionId);
+            return false;
+        }
+        Set<AudioTrack> audioTracks = getRegionSetFlag(region, plugin.getAudioFlag());
+        if (!audioTracks.add(audio)) {
+            plugin.getMessenger().sendErrorMessage(sender, "failed.edit-audio-exists", regionId);
+            return false;
+        }
+
+        if (!saveRegionSetFlag(regionManager, region, plugin.getAudioFlag(), audioTracks)) {
+            plugin.getMessenger().sendErrorMessage(sender, "failed.worldguard-save");
+            return false;
+        }
+
+        plugin.getMessenger().sendMessage(sender, "succeeded.audio-added", audio, regionId);
+        return true;
+    }
+
+    public boolean removeAudio(CommandSender sender, AudioTrack audio, RegionManager regionManager, String regionId) {
+        ProtectedRegion region = regionManager.getRegion(regionId);
+        if (region == null) {
+            plugin.getMessenger().sendErrorMessage(sender, "failed.edit-invalid-region", regionId);
+            return false;
+        }
+        Set<AudioTrack> audioTracks = getRegionSetFlag(region, plugin.getAudioFlag());
+        if (!audioTracks.remove(audio)) {
+            plugin.getMessenger().sendErrorMessage(sender, "failed.edit-audio-absent", regionId);
+            return false;
+        }
+
+        if (!saveRegionSetFlag(regionManager, region, plugin.getAudioFlag(), audioTracks)) {
+            plugin.getMessenger().sendErrorMessage(sender, "failed.worldguard-save");
+            return false;
+        }
+
+        plugin.getMessenger().sendMessage(sender, "succeeded.audio-removed", audio, regionId);
+        return true;
+    }
+
+    public boolean addDelay(CommandSender sender, AudioDelay delay, RegionManager regionManager, String regionId) {
+        ProtectedRegion region = regionManager.getRegion(regionId);
+        if (region == null) {
+            plugin.getMessenger().sendErrorMessage(sender, "failed.edit-invalid-region", regionId);
+            return false;
+        }
+        Set<AudioDelay> audioDelays = getRegionSetFlag(region, plugin.getAudioDelayFlag());
+        if (!audioDelays.add(delay)) {
+            plugin.getMessenger().sendErrorMessage(sender, "failed.edit-delay-exists", regionId);
+            return false;
+        }
+
+        if (!saveRegionSetFlag(regionManager, region, plugin.getAudioDelayFlag(), audioDelays)) {
+            plugin.getMessenger().sendErrorMessage(sender, "failed.worldguard-save");
+            return false;
+        }
+
+        plugin.getMessenger().sendMessage(sender, "succeeded.delay-added", delay, regionId);
+        return true;
+    }
+
+    public boolean removeDelay(CommandSender sender, AudioDelay delay, RegionManager regionManager, String regionId) {
+        ProtectedRegion region = regionManager.getRegion(regionId);
+        if (region == null) {
+            plugin.getMessenger().sendErrorMessage(sender, "failed.edit-invalid-region", regionId);
+            return false;
+        }
+        Set<AudioDelay> audioDelays = getRegionSetFlag(region, plugin.getAudioDelayFlag());
+        if (!audioDelays.remove(delay)) {
+            plugin.getMessenger().sendErrorMessage(sender, "failed.edit-delay-absent", regionId);
+            return false;
+        }
+
+        if (!saveRegionSetFlag(regionManager, region, plugin.getAudioDelayFlag(), audioDelays)) {
+            plugin.getMessenger().sendErrorMessage(sender, "failed.worldguard-save");
+            return false;
+        }
+
+        plugin.getMessenger().sendMessage(sender, "succeeded.delay-removed", delay, regionId);
+        return true;
+    }
+
+
+    private <T> boolean saveRegionSetFlag(RegionManager regionManager, ProtectedRegion region, SetFlag<T> flag, Set<T> value) {
         try {
-            region.setFlag(plugin.getAudioFlag(), regionAudio);
+            region.setFlag(flag, value);
             regionManager.saveChanges();
             return true;
         } catch (StorageException e) {
@@ -209,12 +280,12 @@ public class RegionCommand implements Command {
         }
     }
 
-    private Set<AudioTrack> getRegionAudio(ProtectedRegion region) {
-        Set<AudioTrack> regionAudio = region.getFlag(plugin.getAudioFlag());
-        if (regionAudio == null) {
+    private <T> Set<T> getRegionSetFlag(ProtectedRegion region, SetFlag<T> setFlag) {
+        Set<T> flagValue = region.getFlag(setFlag);
+        if (flagValue == null) {
             return new HashSet<>();
         } else {
-            return new HashSet<>(regionAudio);
+            return new HashSet<>(flagValue);
         }
     }
 
