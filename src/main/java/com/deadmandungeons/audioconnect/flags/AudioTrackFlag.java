@@ -4,8 +4,8 @@ import com.deadmandungeons.audioconnect.AudioConnect;
 import com.deadmandungeons.audioconnect.flags.AudioTrack.DayTime;
 import com.deadmandungeons.audioconnect.flags.compat.FlagHandler;
 import com.deadmandungeons.audioconnect.flags.compat.LegacyFlag;
-import com.deadmandungeons.audioconnect.messages.AudioMessage;
-import com.deadmandungeons.audioconnect.messages.AudioMessage.IdentifierSyntaxException;
+import com.deadmandungeons.connect.commons.ConnectUtils;
+import com.deadmandungeons.connect.commons.messenger.exceptions.IdentifierSyntaxException;
 import com.sk89q.worldguard.protection.flags.Flag;
 import com.sk89q.worldguard.protection.flags.FlagContext;
 import com.sk89q.worldguard.protection.flags.InvalidFlagFormat;
@@ -52,7 +52,7 @@ public class AudioTrackFlag extends Flag<AudioTrack> implements FlagHandler<Audi
             if (audioId == null && key.equals("id")) {
                 audioId = value;
                 try {
-                    AudioMessage.validateIdentifier(audioId);
+                    ConnectUtils.validateIdentifier(audioId);
                 } catch (IdentifierSyntaxException e) {
                     String msg = plugin.getMessenger().getMessage("failed.invalid-audio-id", false, audioId, e.getMessage());
                     throw new InvalidFlagFormat(msg);
@@ -65,7 +65,7 @@ public class AudioTrackFlag extends Flag<AudioTrack> implements FlagHandler<Audi
             } else if (trackId == null && key.equals("track")) {
                 trackId = value;
                 try {
-                    AudioMessage.validateIdentifier(trackId);
+                    ConnectUtils.validateIdentifier(trackId);
                 } catch (IdentifierSyntaxException e) {
                     String msg = plugin.getMessenger().getMessage("failed.invalid-track-id", false, trackId, e.getMessage());
                     throw new InvalidFlagFormat(msg);
@@ -97,7 +97,7 @@ public class AudioTrackFlag extends Flag<AudioTrack> implements FlagHandler<Audi
                     return null;
                 }
                 String audioId = (String) rawAudioId;
-                AudioMessage.validateIdentifier(audioId);
+                ConnectUtils.validateIdentifier(audioId);
 
                 String trackId = null;
                 Object rawTrackId = map.get("track");
@@ -106,7 +106,7 @@ public class AudioTrackFlag extends Flag<AudioTrack> implements FlagHandler<Audi
                         return null;
                     }
                     trackId = (String) rawTrackId;
-                    AudioMessage.validateIdentifier(trackId);
+                    ConnectUtils.validateIdentifier(trackId);
                 }
 
                 DayTime dayTime = null;
@@ -123,7 +123,7 @@ public class AudioTrackFlag extends Flag<AudioTrack> implements FlagHandler<Audi
                     return null;
                 }
                 String audioId = (String) object;
-                AudioMessage.validateIdentifier(audioId);
+                ConnectUtils.validateIdentifier(audioId);
 
                 return new AudioTrack(audioId, null, null);
             }

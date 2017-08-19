@@ -11,7 +11,7 @@ import org.bukkit.entity.Player;
 @CommandInfo(
     name = "Connect",
     permissions = {"audioconnect.user.connect"},
-    description = "Get the connection URL to your dynamic audio stream for this server",
+    description = "Get the URL to your dynamic audio stream for this server",
     inGameOnly = true
 )//@formatter:on
 public class ConnectCommand implements Command {
