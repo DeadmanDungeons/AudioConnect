@@ -1,7 +1,7 @@
 package com.deadmandungeons.audioconnect;
 
-import com.deadmandungeons.audioconnect.messages.AudioMessage;
 import com.deadmandungeons.connect.commons.ConnectUtils;
+import com.deadmandungeons.connect.commons.messenger.exceptions.IdentifierSyntaxException;
 import com.deadmandungeons.deadmanplugin.Conversion;
 import com.deadmandungeons.deadmanplugin.DeadmanPlugin;
 import com.deadmandungeons.deadmanplugin.filedata.DeadmanConfig;
@@ -303,14 +303,14 @@ public final class AudioConnectConfig extends DeadmanConfig {
                 ConfigurationSection section = (ConfigurationSection) object;
                 String trackId = section.getName();
                 try {
-                    AudioMessage.validateIdentifier(trackId);
+                    ConnectUtils.validateIdentifier(trackId);
 
                     boolean defaultTrack = section.getBoolean("default");
                     boolean repeating = section.getBoolean("repeating");
                     boolean random = section.getBoolean("random");
                     boolean fading = section.getBoolean("fading");
                     return new AudioTrackSettings(defaultTrack, repeating, random, fading);
-                } catch (AudioMessage.IdentifierSyntaxException e) {
+                } catch (IdentifierSyntaxException e) {
                     String warning = "The configured track ID '" + trackId + "' is invalid. " + e.getMessage();
                     plugin.getLogger().warning(warning);
                 }

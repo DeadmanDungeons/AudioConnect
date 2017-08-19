@@ -3,9 +3,9 @@ package com.deadmandungeons.audioconnect.flags;
 import com.deadmandungeons.audioconnect.AudioConnect;
 import com.deadmandungeons.audioconnect.flags.compat.FlagHandler;
 import com.deadmandungeons.audioconnect.flags.compat.LegacyFlag;
-import com.deadmandungeons.audioconnect.messages.AudioMessage;
-import com.deadmandungeons.audioconnect.messages.AudioMessage.IdentifierSyntaxException;
 import com.deadmandungeons.audioconnect.messages.AudioMessage.Range;
+import com.deadmandungeons.connect.commons.ConnectUtils;
+import com.deadmandungeons.connect.commons.messenger.exceptions.IdentifierSyntaxException;
 import com.sk89q.worldguard.protection.flags.Flag;
 import com.sk89q.worldguard.protection.flags.FlagContext;
 import com.sk89q.worldguard.protection.flags.InvalidFlagFormat;
@@ -55,7 +55,7 @@ public class AudioDelayFlag extends Flag<AudioDelay> implements FlagHandler<Audi
             } else if (trackId == null && key.equals("track")) {
                 trackId = value;
                 try {
-                    AudioMessage.validateIdentifier(trackId);
+                    ConnectUtils.validateIdentifier(trackId);
                 } catch (IdentifierSyntaxException e) {
                     throw new InvalidFlagFormat("track " + e.getMessage());
                 }
@@ -89,7 +89,7 @@ public class AudioDelayFlag extends Flag<AudioDelay> implements FlagHandler<Audi
                 }
                 try {
                     trackId = (String) rawTrackId;
-                    AudioMessage.validateIdentifier(trackId);
+                    ConnectUtils.validateIdentifier(trackId);
                 } catch (IdentifierSyntaxException e) {
                     return null;
                 }

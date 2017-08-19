@@ -9,7 +9,7 @@ import com.deadmandungeons.audioconnect.flags.AudioTrackFlag;
 import com.deadmandungeons.audioconnect.messages.AudioMessage;
 import com.deadmandungeons.audioconnect.messages.AudioMessage.Range;
 import com.deadmandungeons.connect.commons.ConnectUtils;
-import com.deadmandungeons.connect.commons.Messenger.Message;
+import com.deadmandungeons.connect.commons.messenger.messages.Message;
 import com.deadmandungeons.deadmanplugin.DeadmanPlugin;
 import com.deadmandungeons.deadmanplugin.Messenger;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
@@ -48,7 +48,7 @@ public final class AudioConnect extends DeadmanPlugin {
 
     private final AudioConnectConfig config = new AudioConnectConfig();
     private final AudioList audioList = new AudioList(getLogger(), new AudioUpdateHandler());
-    private final boolean spigot = checkClass("org.spigotmc.SpigotConfig");
+    private final boolean spigot = ConnectUtils.checkClass("org.spigotmc.SpigotConfig");
 
     private WorldGuardPlugin worldGuard;
     private SetFlag<AudioTrack> audioFlag;
@@ -187,15 +187,6 @@ public final class AudioConnect extends DeadmanPlugin {
         return webappUrl + "/connect?s=" + serverId + "&u=" + encodedPlayerId;
     }
 
-
-    private static boolean checkClass(String className) {
-        try {
-            Class.forName(className);
-            return true;
-        } catch (ClassNotFoundException e) {
-            return false;
-        }
-    }
 
     private static void injectWorldGuardFlags(Flag<?>... flags) throws Exception {
         Flag<?>[] flagsList = DefaultFlag.flagsList;

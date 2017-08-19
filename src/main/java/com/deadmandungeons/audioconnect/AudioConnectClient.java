@@ -5,12 +5,13 @@ import com.deadmandungeons.audioconnect.PlayerScheduler.PlayerDataWriter;
 import com.deadmandungeons.audioconnect.messages.AudioListMessage;
 import com.deadmandungeons.audioconnect.messages.AudioMessage;
 import com.deadmandungeons.audioconnect.messages.AudioTrackMessage;
-import com.deadmandungeons.connect.commons.HeartbeatMessage;
-import com.deadmandungeons.connect.commons.Messenger;
-import com.deadmandungeons.connect.commons.Messenger.Message;
-import com.deadmandungeons.connect.commons.Messenger.MessageParseException;
-import com.deadmandungeons.connect.commons.StatusMessage;
-import com.deadmandungeons.connect.commons.StatusMessage.Status;
+import com.deadmandungeons.connect.commons.messenger.Messenger;
+import com.deadmandungeons.connect.commons.messenger.exceptions.InvalidMessageException;
+import com.deadmandungeons.connect.commons.messenger.exceptions.MessageParseException;
+import com.deadmandungeons.connect.commons.messenger.messages.HeartbeatMessage;
+import com.deadmandungeons.connect.commons.messenger.messages.Message;
+import com.deadmandungeons.connect.commons.messenger.messages.StatusMessage;
+import com.deadmandungeons.connect.commons.messenger.messages.StatusMessage.Status;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -109,8 +110,8 @@ public class AudioConnectClient {
 
         // execute every 20 ticks (1 second) with max of 20 displaced scheduler tasks
         playerScheduler = new PlayerScheduler(plugin, playerDataWriter, 20, 20);
-        messenger = Messenger.builder().registerMessageType(AudioMessage.CREATOR).registerMessageType(AudioListMessage.CREATOR)
-                .registerMessageType(AudioTrackMessage.CREATOR).build();
+        messenger = Messenger.builder().registerMessageType(AudioMessage.class).registerMessageType(AudioListMessage.class)
+                .registerMessageType(AudioTrackMessage.class).build();
         logger = plugin.getLogger();
 
         bootstrap.group(new NioEventLoopGroup());
@@ -402,6 +403,10 @@ public class AudioConnectClient {
 
     private class ConnectionChannelInitializer extends ChannelInitializer<SocketChannel> {
 
+        public static final String USER_ID_HEADER = "X-AC-User-Id";
+        public static final String USER_PASSWORD_HEADER = "X-AC-User-Password";
+        public static final String SUPPLIER_ID_HEADER = "X-AC-Supplier-Id";
+
         // Connect with V13 (RFC 6455 aka HyBi-17)
         private final WebSocketVersion WS_VERSION = WebSocketVersion.V13;
 
@@ -410,9 +415,9 @@ public class AudioConnectClient {
             URI uri = config.getConnectionWebsocketUri();
 
             DefaultHttpHeaders headers = new DefaultHttpHeaders();
-            headers.add(Messenger.USER_ID_HEADER, config.getConnectionUserId().toString());
-            headers.add(Messenger.USER_PASSWORD_HEADER, config.getConnectionUserPassword());
-            headers.add(Messenger.SUPPLIER_ID_HEADER, config.getConnectionServerId());
+            headers.add(USER_ID_HEADER, config.getConnectionUserId().toString());
+            headers.add(USER_PASSWORD_HEADER, config.getConnectionUserPassword());
+            headers.add(SUPPLIER_ID_HEADER, config.getConnectionServerId());
 
             WebSocketClientHandshaker handshaker = WebSocketClientHandshakerFactory.newHandshaker(uri, WS_VERSION, null, false, headers);
 
@@ -550,7 +555,7 @@ public class AudioConnectClient {
                         message.validate();
 
                         handleMessage(ctx, message);
-                    } catch (Messenger.InvalidDataException e) {
+                    } catch (InvalidMessageException e) {
                         String msg = "Received invalid or unsupported %s message from AudioConnect server: %s";
                         logger.warning(String.format(msg, message.getType(), e.getMessage()));
                     }

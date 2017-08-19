@@ -3,7 +3,7 @@ package com.deadmandungeons.audioconnect.command;
 import com.deadmandungeons.audioconnect.AudioConnect;
 import com.deadmandungeons.audioconnect.AudioConnectConfig;
 import com.deadmandungeons.audioconnect.flags.AudioTrack;
-import com.deadmandungeons.audioconnect.messages.AudioMessage;
+import com.deadmandungeons.connect.commons.ConnectUtils;
 import com.deadmandungeons.deadmanplugin.Messenger;
 import com.deadmandungeons.deadmanplugin.command.ArgumentInfo;
 import com.deadmandungeons.deadmanplugin.command.Arguments;
@@ -311,7 +311,7 @@ public class ImportCommand implements Command {
                         audioId = in.readLine();
                     }
 
-                    AudioMessage.validateIdentifier(audioId);
+                    ConnectUtils.validateIdentifier(audioId);
                     status.addSuccess(regionAudio, audioId);
 
                     // WorldGuard region management is thread safe

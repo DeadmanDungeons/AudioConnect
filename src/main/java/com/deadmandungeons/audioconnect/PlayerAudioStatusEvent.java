@@ -1,6 +1,6 @@
 package com.deadmandungeons.audioconnect;
 
-import com.deadmandungeons.connect.commons.StatusMessage.Status;
+import com.deadmandungeons.connect.commons.messenger.messages.StatusMessage.Status;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
