@@ -14,7 +14,7 @@ import com.sk89q.worldguard.protection.flags.StringFlag;
 import java.util.HashMap;
 import java.util.Map;
 
-public class AudioDelayFlag extends Flag<AudioDelay> implements FlagHandler<AudioDelay> {
+public class AudioDelayFlag extends Flag<AudioDelay> implements FlagHandler<AudioDelay>, FlagAdapter<AudioDelay> {
 
     private final AudioConnect plugin = AudioConnect.getInstance();
     private final StringFlag stringFlag = new StringFlag(null);
@@ -23,10 +23,10 @@ public class AudioDelayFlag extends Flag<AudioDelay> implements FlagHandler<Audi
         super(null);
     }
 
-    public static Flag<AudioDelay> createLegacy() {
-        return new LegacyFlag<>(new AudioDelayFlag(), null);
+    @Override
+    public Flag<AudioDelay> toLegacy() {
+        return new LegacyFlag<>(this, null);
     }
-
 
     @Override
     public AudioDelay parseInput(FlagContext context) throws InvalidFlagFormat {

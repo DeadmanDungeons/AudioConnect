@@ -10,7 +10,6 @@ import com.deadmandungeons.deadmanplugin.command.Arguments;
 import com.deadmandungeons.deadmanplugin.command.Command;
 import com.deadmandungeons.deadmanplugin.command.CommandInfo;
 import com.deadmandungeons.deadmanplugin.command.SubCommandInfo;
-import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import org.bukkit.Bukkit;
@@ -244,7 +243,7 @@ public class ListCommand implements Command {
         protected WorldRegion[] getList() {
             List<WorldRegion> regions = new ArrayList<>();
             for (World world : Bukkit.getWorlds()) {
-                RegionManager regionManager = WorldGuardPlugin.inst().getRegionManager(world);
+                RegionManager regionManager = plugin.getWorldGuardAdapter().getRegionManager(world);
                 for (ProtectedRegion region : regionManager.getRegions().values()) {
                     if (region.getFlags().containsKey(plugin.getAudioFlag())) {
                         regions.add(new WorldRegion(world, region));
