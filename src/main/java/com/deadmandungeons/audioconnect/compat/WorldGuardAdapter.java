@@ -51,7 +51,7 @@ public abstract class WorldGuardAdapter {
                 return new WorldGuardAdapterLegacy();
             }
         } else {
-            throw new UnsupportedOperationException("");
+            throw new UnsupportedOperationException("Unable to parse invalid WorldGuard version string: \"" + worldGuardVersion + "\"");
         }
     }
 
