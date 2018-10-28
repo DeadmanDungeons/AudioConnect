@@ -2,6 +2,7 @@ package com.deadmandungeons.audioconnect;
 
 import com.deadmandungeons.audioconnect.AudioConnectClient.PlayerAudioDataWriter;
 import com.deadmandungeons.audioconnect.command.CommandHandler;
+import com.deadmandungeons.audioconnect.compat.WorldGuardAdapter;
 import com.deadmandungeons.audioconnect.flags.AudioDelay;
 import com.deadmandungeons.audioconnect.flags.AudioDelayFlag;
 import com.deadmandungeons.audioconnect.flags.AudioTrack;
@@ -12,22 +13,15 @@ import com.deadmandungeons.connect.commons.ConnectUtils;
 import com.deadmandungeons.connect.commons.messenger.messages.Message;
 import com.deadmandungeons.deadmanplugin.DeadmanPlugin;
 import com.deadmandungeons.deadmanplugin.Messenger;
-import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
-import com.sk89q.worldguard.bukkit.util.Locations;
 import com.sk89q.worldguard.protection.ApplicableRegionSet;
-import com.sk89q.worldguard.protection.flags.DefaultFlag;
-import com.sk89q.worldguard.protection.flags.Flag;
 import com.sk89q.worldguard.protection.flags.SetFlag;
 import com.sk89q.worldguard.protection.managers.RegionManager;
-import com.sk89q.worldguard.protection.managers.storage.StorageException;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.metadata.FixedMetadataValue;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -50,7 +44,7 @@ public final class AudioConnect extends DeadmanPlugin {
     private final AudioList audioList = new AudioList(getLogger(), new AudioUpdateHandler());
     private final boolean spigot = ConnectUtils.checkClass("org.spigotmc.SpigotConfig");
 
-    private WorldGuardPlugin worldGuard;
+    private WorldGuardAdapter worldGuardAdapter;
     private SetFlag<AudioTrack> audioFlag;
     private SetFlag<AudioDelay> audioDelayFlag;
 
@@ -67,31 +61,11 @@ public final class AudioConnect extends DeadmanPlugin {
 
     @Override
     protected void onPluginLoad() {
-        worldGuard = (WorldGuardPlugin) Bukkit.getPluginManager().getPlugin("WorldGuard");
-        try {
-            worldGuard.getClass().getMethod("getFlagRegistry");
-
-            // WorldGuard version is 6.2 or above
-            audioFlag = new SetFlag<>("audio", new AudioTrackFlag());
-            audioDelayFlag = new SetFlag<>("audio-delay", new AudioDelayFlag());
-
-            worldGuard.getFlagRegistry().register(audioFlag);
-            worldGuard.getFlagRegistry().register(audioDelayFlag);
-        } catch (NoSuchMethodException e) {
-            String version = worldGuard.getDescription().getVersion();
-            getLogger().info("Detected an older version of WorldGuard (" + version + "). Attempting to make AudioConnect compatible...");
-
-            audioFlag = new SetFlag<>("audio", AudioTrackFlag.createLegacy());
-            audioDelayFlag = new SetFlag<>("audio-delay", AudioDelayFlag.createLegacy());
-
-            try {
-                injectWorldGuardFlags(audioFlag, audioDelayFlag);
-
-                getLogger().info("Successfully adjusted for compatibility with the current WorldGuard version");
-            } catch (Exception e2) {
-                getLogger().log(Level.SEVERE, "Failed to inject audio flags into WorldGuard. Consider upgrading WorldGuard to v6.2 or higher", e2);
-            }
-        }
+        worldGuardAdapter = WorldGuardAdapter.getInstance();
+        audioFlag = worldGuardAdapter.initSetFlag("audio", new AudioTrackFlag());
+        audioDelayFlag = worldGuardAdapter.initSetFlag("audio-delay", new AudioDelayFlag());
+        worldGuardAdapter.installFlags(audioFlag, audioDelayFlag);
+        getLogger().info("Successfully initialized WorldGuard adapter");
     }
 
     @Override
@@ -162,6 +136,13 @@ public final class AudioConnect extends DeadmanPlugin {
     }
 
     /**
+     * @return the WorldGuardAdapter instance for the current WorldGuard plugin installation
+     */
+    public WorldGuardAdapter getWorldGuardAdapter() {
+        return worldGuardAdapter;
+    }
+
+    /**
      * @return the custom <code>audio</code> WorldGuard flag instance
      */
     public SetFlag<AudioTrack> getAudioFlag() {
@@ -185,22 +166,6 @@ public final class AudioConnect extends DeadmanPlugin {
         String encodedPlayerId = ConnectUtils.encodeUuidBase64(playerId);
 
         return webappUrl + "/connect?s=" + serverId + "&u=" + encodedPlayerId;
-    }
-
-
-    private static void injectWorldGuardFlags(Flag<?>... flags) throws Exception {
-        Flag<?>[] flagsList = DefaultFlag.flagsList;
-
-        Field flagsListField = DefaultFlag.class.getField("flagsList");
-        Field modifiersField = Field.class.getDeclaredField("modifiers");
-        modifiersField.setAccessible(true);
-        modifiersField.setInt(flagsListField, flagsListField.getModifiers() & ~Modifier.FINAL);
-
-        Flag<?>[] newFlagsList = new Flag<?>[flagsList.length + flags.length];
-        System.arraycopy(flagsList, 0, newFlagsList, 0, flagsList.length);
-        System.arraycopy(flags, 0, newFlagsList, flagsList.length, flags.length);
-
-        flagsListField.set(null, newFlagsList);
     }
 
 
@@ -232,7 +197,7 @@ public final class AudioConnect extends DeadmanPlugin {
 
         @Override
         public void deleteAll(Set<String> audioIds) {
-            List<RegionManager> regionManagers = WorldGuardPlugin.inst().getRegionContainer().getLoaded();
+            List<RegionManager> regionManagers = worldGuardAdapter.getRegionManagers();
             for (RegionManager regionManager : regionManagers) {
                 for (ProtectedRegion region : regionManager.getRegions().values()) {
                     Set<AudioTrack> audioTracks = region.getFlag(audioFlag);
@@ -258,8 +223,8 @@ public final class AudioConnect extends DeadmanPlugin {
             for (RegionManager regionManager : regionManagers) {
                 try {
                     regionManager.saveChanges();
-                } catch (StorageException e) {
-                    getLogger().log(Level.WARNING, "Failed to save '" + regionManager + "' WorldGuard region changes from audio deletion");
+                } catch (Exception e) {
+                    getLogger().log(Level.WARNING, "Failed to save '" + regionManager + "' WorldGuard region changes from audio deletion", e);
                 }
             }
             for (String audioId : audioIds) {
@@ -269,7 +234,7 @@ public final class AudioConnect extends DeadmanPlugin {
 
         @Override
         public void replace(String audioId, String newAudioId) {
-            List<RegionManager> regionManagers = WorldGuardPlugin.inst().getRegionContainer().getLoaded();
+            List<RegionManager> regionManagers = worldGuardAdapter.getRegionManagers();
             for (RegionManager regionManager : regionManagers) {
                 for (ProtectedRegion region : regionManager.getRegions().values()) {
                     Set<AudioTrack> audioTracks = region.getFlag(audioFlag);
@@ -293,8 +258,8 @@ public final class AudioConnect extends DeadmanPlugin {
             for (RegionManager regionManager : regionManagers) {
                 try {
                     regionManager.saveChanges();
-                } catch (StorageException e) {
-                    getLogger().log(Level.WARNING, "Failed to save '" + regionManager + "' WorldGuard region changes from audio replacement");
+                } catch (Exception e) {
+                    getLogger().log(Level.WARNING, "Failed to save '" + regionManager + "' WorldGuard region changes from audio replacement", e);
                 }
             }
             getLogger().info("Replaced audio '" + audioId + "' with '" + newAudioId + "' in all occurring WorldGuard regions.");
@@ -320,7 +285,7 @@ public final class AudioConnect extends DeadmanPlugin {
             if (trackingData.timestamp + REGION_CHECK_DELAY > now) {
                 return;
             }
-            if (!Locations.isDifferentBlock(trackingData.location, loc)) {
+            if (!isDifferentBlock(trackingData.location, loc)) {
                 return;
             }
 
@@ -350,8 +315,8 @@ public final class AudioConnect extends DeadmanPlugin {
             String defaultTrackId = config.getDefaultTrackId();
 
             Location loc = player.getLocation();
-            RegionManager regionManager = worldGuard.getRegionManager(loc.getWorld());
-            ApplicableRegionSet regions = regionManager.getApplicableRegions(loc);
+            RegionManager regionManager = worldGuardAdapter.getRegionManager(loc.getWorld());
+            ApplicableRegionSet regions = worldGuardAdapter.getApplicableRegions(regionManager, loc);
             Iterator<ProtectedRegion> iterator = regions.iterator();
 
             int audioTrackPriority = 0, audioDelayPriority = 0;
@@ -474,6 +439,10 @@ public final class AudioConnect extends DeadmanPlugin {
                 player.setMetadata(TRACKING_METADATA, new FixedMetadataValue(AudioConnect.this, trackingData));
             }
             return trackingData;
+        }
+
+        public boolean isDifferentBlock(Location a, Location b) {
+            return (a.getBlockX() != b.getBlockX()) || (a.getBlockY() != b.getBlockY()) || (a.getBlockZ() != b.getBlockZ());
         }
 
     }

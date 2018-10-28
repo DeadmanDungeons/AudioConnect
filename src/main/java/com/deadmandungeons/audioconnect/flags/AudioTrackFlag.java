@@ -15,7 +15,7 @@ import org.apache.commons.lang.StringUtils;
 import java.util.HashMap;
 import java.util.Map;
 
-public class AudioTrackFlag extends Flag<AudioTrack> implements FlagHandler<AudioTrack> {
+public class AudioTrackFlag extends Flag<AudioTrack> implements FlagHandler<AudioTrack>, FlagAdapter<AudioTrack> {
 
     private final AudioConnect plugin = AudioConnect.getInstance();
     private final StringFlag stringFlag = new StringFlag(null);
@@ -24,10 +24,10 @@ public class AudioTrackFlag extends Flag<AudioTrack> implements FlagHandler<Audi
         super(null);
     }
 
-    public static Flag<AudioTrack> createLegacy() {
-        return new LegacyFlag<>(new AudioTrackFlag(), null);
+    @Override
+    public Flag<AudioTrack> toLegacy() {
+        return new LegacyFlag<>(this, null);
     }
-
 
     @Override
     public AudioTrack parseInput(FlagContext context) throws InvalidFlagFormat {

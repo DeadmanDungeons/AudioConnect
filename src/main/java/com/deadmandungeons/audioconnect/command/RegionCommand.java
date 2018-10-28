@@ -9,7 +9,6 @@ import com.deadmandungeons.deadmanplugin.command.Arguments;
 import com.deadmandungeons.deadmanplugin.command.Command;
 import com.deadmandungeons.deadmanplugin.command.CommandInfo;
 import com.deadmandungeons.deadmanplugin.command.SubCommandInfo;
-import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.protection.flags.SetFlag;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.managers.storage.StorageException;
@@ -88,7 +87,7 @@ public class RegionCommand implements Command {
         int command = args.getSubCmdIndex();
 
         String regionId = (String) args.getArgs()[command == 0 ? 1 : 2];
-        RegionManager regionManager = WorldGuardPlugin.inst().getRegionManager(player.getWorld());
+        RegionManager regionManager = plugin.getWorldGuardAdapter().getRegionManager(player.getWorld());
         if (regionManager == null) {
             plugin.getMessenger().sendErrorMessage(sender, "failed.edit-invalid-region", regionId);
             return false;

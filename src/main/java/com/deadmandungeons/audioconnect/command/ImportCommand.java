@@ -13,7 +13,6 @@ import com.deadmandungeons.deadmanplugin.command.SubCommandInfo;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.BaseEncoding;
 import com.google.common.net.HttpHeaders;
-import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.managers.storage.StorageException;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
@@ -384,7 +383,7 @@ public class ImportCommand implements Command {
 
             ImmutableSet.Builder<RegionManager> regionManagersBuilder = ImmutableSet.builder();
             for (World world : Bukkit.getWorlds()) {
-                RegionManager regionManager = WorldGuardPlugin.inst().getRegionManager(world);
+                RegionManager regionManager = plugin.getWorldGuardAdapter().getRegionManager(world);
                 if (regionManager != null) {
                     regionManagersBuilder.add(regionManager);
                 }
