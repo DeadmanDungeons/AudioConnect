@@ -4,7 +4,7 @@ version: ${project.version}
 author: Weasel_Squeezer
 website: https://minecraftaudio.com
 
-depend: [DeadmanPlugin, WorldGuard]
+depend: [WorldGuard]
 softdepend: [ProtocolLib]
 
 commands:
