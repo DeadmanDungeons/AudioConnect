@@ -1,7 +1,6 @@
 package com.deadmandungeons.audioconnect.compat;
 
 import com.deadmandungeons.audioconnect.flags.FlagAdapter;
-import com.sk89q.worldedit.bukkit.BukkitUtil;
 import com.sk89q.worldedit.bukkit.BukkitWorld;
 import com.sk89q.worldguard.protection.ApplicableRegionSet;
 import com.sk89q.worldguard.protection.flags.Flag;
@@ -17,24 +16,36 @@ import java.util.List;
 
 class WorldGuardAdapterV7 extends WorldGuardAdapter {
 
-    private final Object regionContainer;
+    private final Object worldGuard;
     private final FlagRegistry flagRegistry;
+    private final Class<?> blockVector3Class;
+
+    private Object regionContainer;
 
     WorldGuardAdapterV7() {
         try {
             // WorldGuard.getInstance().getPlatform().getRegionContainer()
             Class<?> worldGuardClass = getClass().getClassLoader().loadClass("com.sk89q.worldguard.WorldGuard");
-            Object worldGuard = MethodUtils.invokeExactStaticMethod(worldGuardClass, "getInstance", null);
-            Object worldGuardPlatform = MethodUtils.invokeExactMethod(worldGuard, "getPlatform", null);
-            regionContainer = MethodUtils.invokeExactMethod(worldGuardPlatform, "getRegionContainer", null);
+            worldGuard = MethodUtils.invokeExactStaticMethod(worldGuardClass, "getInstance", null);
 
             // WorldGuard.getInstance().getFlagRegistry()
             flagRegistry = (FlagRegistry) MethodUtils.invokeExactMethod(worldGuard, "getFlagRegistry", null);
+
+            blockVector3Class = getClass().getClassLoader().loadClass("com.sk89q.worldedit.math.BlockVector3");
         } catch (Exception e) {
             throw new UnsupportedOperationException("Failed to initialize adapter for WorldGuard v7.x!", e);
         }
     }
 
+    @Override
+    public void initRegionAdapter() {
+        try {
+            Object worldGuardPlatform = MethodUtils.invokeExactMethod(worldGuard, "getPlatform", null);
+            regionContainer = MethodUtils.invokeExactMethod(worldGuardPlatform, "getRegionContainer", null);
+        } catch (Exception e) {
+            throw new UnsupportedOperationException("Failed to initialize adapter for WorldGuard v7.x!", e);
+        }
+    }
 
     @Override
     public <T, F extends Flag<T> & FlagAdapter<T>> SetFlag<T> initSetFlag(String flagName, F flag) {
@@ -59,7 +70,7 @@ class WorldGuardAdapterV7 extends WorldGuardAdapter {
     @Override
     public RegionManager getRegionManager(World world) {
         try {
-            return (RegionManager) MethodUtils.invokeExactMethod(regionContainer, "get", new BukkitWorld(world));
+            return (RegionManager) MethodUtils.invokeMethod(regionContainer, "get", new BukkitWorld(world));
         } catch (Exception e) {
             throw new UnsupportedOperationException(e);
         }
@@ -68,7 +79,8 @@ class WorldGuardAdapterV7 extends WorldGuardAdapter {
     @Override
     public ApplicableRegionSet getApplicableRegions(RegionManager regionManager, Location location) {
         try {
-            return (ApplicableRegionSet) MethodUtils.invokeExactMethod(regionManager, "getApplicableRegions", BukkitUtil.toVector(location));
+            Object vector = MethodUtils.invokeStaticMethod(blockVector3Class, "at", new Object[]{location.getX(), location.getY(), location.getZ()});
+            return (ApplicableRegionSet) MethodUtils.invokeMethod(regionManager, "getApplicableRegions", vector);
         } catch (Exception e) {
             throw new UnsupportedOperationException(e);
         }

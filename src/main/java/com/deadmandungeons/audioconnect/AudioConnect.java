@@ -58,18 +58,19 @@ public final class AudioConnect extends DeadmanPlugin {
         return getDeadmanPlugin(AudioConnect.class);
     }
 
-
     @Override
     protected void onPluginLoad() {
         worldGuardAdapter = WorldGuardAdapter.getInstance();
         audioFlag = worldGuardAdapter.initSetFlag("audio", new AudioTrackFlag());
         audioDelayFlag = worldGuardAdapter.initSetFlag("audio-delay", new AudioDelayFlag());
         worldGuardAdapter.installFlags(audioFlag, audioDelayFlag);
-        getLogger().info("Successfully initialized WorldGuard adapter");
     }
 
     @Override
     protected void onPluginEnable() {
+        worldGuardAdapter.initRegionAdapter();
+        getLogger().info("Successfully initialized WorldGuard adapter");
+
         setConfig(config);
 
         messenger = new Messenger(this, config.getLocaleFile());

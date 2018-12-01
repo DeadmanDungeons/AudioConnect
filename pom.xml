@@ -104,7 +104,7 @@
         <dependency>
             <groupId>com.deadmandungeons</groupId>
             <artifactId>deadman-plugin</artifactId>
-            <version>1.8.12</version>
+            <version>1.9.0</version>
         </dependency>
 
         <dependency>

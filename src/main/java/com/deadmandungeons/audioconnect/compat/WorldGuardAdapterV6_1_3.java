@@ -17,6 +17,11 @@ import java.util.List;
 class WorldGuardAdapterV6_1_3 extends WorldGuardAdapter {
 
     @Override
+    public void initRegionAdapter() {
+        // nothing to do
+    }
+
+    @Override
     public <T, F extends Flag<T> & FlagAdapter<T>> SetFlag<T> initSetFlag(String flagName, F flag) {
         return new SetFlag<>(flagName, flag);
     }

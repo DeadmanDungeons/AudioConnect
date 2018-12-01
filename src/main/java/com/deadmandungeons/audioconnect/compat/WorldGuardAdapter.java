@@ -23,6 +23,8 @@ public abstract class WorldGuardAdapter {
     private static final Pattern VERSION_PATTERN = Pattern.compile(VERSION_REGEX);
     private static final Comparator<String> VERSION_COMPARATOR = new VersionComparator();
 
+    public abstract void initRegionAdapter();
+
     public abstract <T, F extends Flag<T> & FlagAdapter<T>> SetFlag<T> initSetFlag(String flagName, F flag);
 
     public abstract void installFlags(Flag<?>... flags);
