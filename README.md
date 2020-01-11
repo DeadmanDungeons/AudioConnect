@@ -1,11 +1,11 @@
 # ![AudioConnect](http://i.imgur.com/IdmU2cS.png)
 
-A [Spigot](https://www.spigotmc.org/wiki/about-spigot/) Minecraft server plugin that provides a powerful web-based audio engine to integrate real-time dynamic audio around player location and actions.
+A [Spigot](https://www.spigotmc.org/wiki/about-spigot/) Minecraft server plugin that provides a powerful web-based audio engine to integrate real-time game audio that is dynamic around player location or actions.
 
-Use AudioConnect to provide truly unique and immersive gameplay with music, sound-effects, soundscapes, voice-over, or any kind of audio.
-You can control where and when the audio plays in-game using its powerful [WorldGuard](https://github.com/sk89q/WorldGuard) region integration.
+Use AudioConnect to provide truly unique and immersive gameplay with music, sound-effects, soundscapes, voice-over, or any other kind of audio.
+You can control where and when the audio plays in-game using its [WorldGuard](https://github.com/sk89q/WorldGuard) region integration.
 
-This plugin is intended to operate as a producer client to the [minecraftaudio.com](https://minecraftaudio.com) web service, but it can be configured to connect with any web server that follows the protocol.
+This plugin is intended to operate as a client to the [minecraftaudio.com](https://minecraftaudio.com) web service, but it can be configured to connect with any web server that follows the protocol.
 
 AudioConnect is open source and is available under The MIT License (MIT)
 
@@ -34,5 +34,5 @@ A release copy of AudioConnect can be obtained from the [Spigot Resource page](h
 
 * [Homepage](https://minecraftaudio.com)
 * [Spigot Resource](https://www.spigotmc.org/resources/audioconnect.40339/)
-* [Wiki](https://github.com/DeadmanDungeons/AudioConnect/wiki)
-* [Javadocs](https://deadmandungeons.github.io/AudioConnect/)
+* [Wiki Documentation](https://github.com/DeadmanDungeons/AudioConnect/wiki)
+* [API Javadoc](https://deadmandungeons.github.io/AudioConnect/)
