@@ -696,7 +696,7 @@ public class AudioConnectClient {
          * The player may be online or offline
          * @return the OfflinePlayer instance for this connected player
          */
-        public OfflinePlayer getPlayer() {
+        public OfflinePlayer getOfflinePlayer() {
             return Bukkit.getOfflinePlayer(playerId);
         }
 

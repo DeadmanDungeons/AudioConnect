@@ -160,11 +160,11 @@ public class ListCommand implements Command {
                 // Sort players alphabetically. Players with a known username appear first.
                 @Override
                 public int compare(PlayerConnection a, PlayerConnection b) {
-                    String aName = a.getPlayer().getName(), bName = b.getPlayer().getName();
+                    String aName = a.getOfflinePlayer().getName(), bName = b.getOfflinePlayer().getName();
                     if (aName != null && bName != null) {
                         return aName.compareTo(bName);
                     } else if (aName == null && bName == null) {
-                        return a.getPlayer().getUniqueId().compareTo(b.getPlayer().getUniqueId());
+                        return a.getOfflinePlayer().getUniqueId().compareTo(b.getOfflinePlayer().getUniqueId());
                     } else if (aName == null) {
                         return 1;
                     } else {
@@ -190,7 +190,7 @@ public class ListCommand implements Command {
             long duration = System.currentTimeMillis() - item.getConnectionTimestamp();
             String connectedDuration = ChatColor.DARK_GRAY + " (" + DeadmanUtils.formatDuration(duration) + ")";
 
-            OfflinePlayer connectedPlayer = item.getPlayer();
+            OfflinePlayer connectedPlayer = item.getOfflinePlayer();
             if (connectedPlayer.isOnline()) {
                 sender.sendMessage("  " + color1() + connectedPlayer.getName() + connectedDuration);
             } else {

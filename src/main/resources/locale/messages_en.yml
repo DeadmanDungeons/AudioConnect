@@ -14,9 +14,11 @@ failed:
   invalid-args: '&cInvalid arguments. Type "/ac help" for a list of commands'
   invalid-args-alt: '&cInvalid arguments. The proper command usage is:'
   no-permission: '&cYou do not have the permission to perform this command'
-  not-connected: '&cYou are not connected to your audio stream for this server. Connect using /ac connect'
-  no-players-connected: '&cNo players are currently connected to the audio stream for this server'
-  player-not-connected: '&c<player-name> is not connected to the audio stream for this server'
+  not-connected: '&cYou are not connected to the server audio stream. Connect using /ac connect'
+  no-players-connected: '&cNo players are currently connected to the audio stream'
+  no-near-player-connected: '&cNo nearby players are currently connected to the audio stream'
+  no-region-players-connected: '&cNo players inside region <region-id> are currently connected to the audio stream'
+  player-not-connected: '&c<player-name> is not connected to the audio stream'
   client-disconnected: '&cThis server is currently disconnected from AudioConnect'
   audio-not-added: 'An audio file with this ID has not been added to your account'
   invalid-audio-id: "&cInvalid audio ID '<audio-id>': <reason>"
@@ -48,6 +50,8 @@ succeeded:
   reloaded: 'AudioConnect config and language files have been reloaded'
   audio-sent-all: 'Audio <audio-id> has been sent to all connected players'
   audio-sent-player: 'Audio <audio-id> has been sent to <player-name>'
+  audio-sent-player-region: 'Audio <audio-id> has been sent to <player-name> inside region <region-id>'
+  audio-sent-region: 'Audio <audio-id> has been sent to <player-count> players inside region <region-id>'
   volume-set: 'Audio has been <state>'
   address-verified: "&7This server's public address &6<address> &7has been &averified &7with your account at <host>"
   import-stopping: 'Stopping the current import process...'
